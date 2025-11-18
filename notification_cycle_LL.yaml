@@ -11,6 +11,8 @@ blueprint:
      * Seuils paramétrables !
      
     Dans les options ci-dessous, il sera nécessaire de créer (ou de sélectionner) un _helper_ (entité). L'aide est fournie.
+
+    Source : [https://github.com/Gotcha26/home-assistant-collection-/blob/main/notification_cycle_LL.yaml](GitHub.com)
   domain: automation
   input:
 
