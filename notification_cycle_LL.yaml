@@ -2,21 +2,21 @@ blueprint:
   name: "Cycle Lave-linge — Notifications + Prévisions Séchage"
   description: >
     __Principales fonctions__ :
-     * Détècte le début d'un cycle de mise en marche du lave-linge ainsi que sa fin de cycle.
+     * Détecte le début d'un cycle de mise en marche du lave-linge ainsi que sa fin de cycle.
      * Envoi automatiquement les notifications de début/fin du lave-linge
-     * Anti-rebond permet d'éviter les mauvaises détections en plein cycle.
+     * L'anti-rebonds permet d'éviter les mauvaises détections en plein cycle.
      * La notification simple, persistante affiche un score de séchage.
      * Score qui tient compte des indicateurs météorologique.
      * Aide à la décision pour sortir (ou non) son linge en extérieur.
      * Seuils paramétrables !
      
-    Dans les options ci-dessous, il sera nécessaire de créer (ou de séléctionner) un _helper_ (entitée). L'aide est fournie.
+    Dans les options ci-dessous, il sera nécessaire de créer (ou de sélectionner) un _helper_ (entité). L'aide est fournie.
   domain: automation
   input:
 
     configuration_1.1:
-      name: "1.1 — Détéction du cycle"
-      description: "Paramètres de détéction du cycle en cours afin de déterminer si un cycle est démarré ou terminé."
+      name: "1.1 — Détection du cycle"
+      description: "Paramètres de détection du cycle en cours afin de déterminer si un cycle est démarré ou terminé."
       icon: mdi:toolbox-outline
       collapsed: false
       input:
@@ -33,7 +33,7 @@ blueprint:
     
         start_threshold:
           name: Seuil puissance démarrage
-          description: "Seuil de détéction qui indique qu'un nouveau cycle est lancé."
+          description: "Seuil de détection qui indique qu'un nouveau cycle est lancé."
           default: 10
           selector:
             number:
@@ -46,7 +46,7 @@ blueprint:
           description: >
             Durée durant laquelle la puissance doit rester au-dessus du seuil.
             
-            Si votre puissance minimun ne tombe pas en dessous ou pas durant assez longtemps, c'est parfait !
+            Si votre puissance minimum ne tombe pas en dessous ou pas durant assez longtemps, c'est parfait !
           default:
             seconds: 20
           selector:
@@ -73,7 +73,7 @@ blueprint:
         cycle_flag:
           name: Sélecteur du booléen
           description: >
-            Permet de créer (ou de choisir !) le _helper booléen_ (entitée) pour le suivi du cycle.
+            Permet de créer (ou de choisir !) le _helper booléen_ (entité) pour le suivi du cycle.
             
             Ce sélécteur est juste un moyen afin de retenir l'état du cycle en cours.
             
@@ -137,7 +137,7 @@ blueprint:
 
     configuration_1.3:
       name: "1.3 — Notifications"
-      description: "Notification qui est envoyée sur votre téléphone portable via l'application Companion"
+      description: "Notification qui est envoyée sur votre téléphone portable via l'application _Companion_"
       icon: mdi:checkbox-blank-badge
       collapsed: true
       input:
@@ -184,8 +184,8 @@ blueprint:
       name: "2.0 — Paramètres avancés — Calculs météo"
       description: >
         Paramètres de seuils afin d'affiner le score de séchage au plus près de la réalité de votre environement, sur le terrain.
-        Un score est calculé en fonction des indicateurs mis à dispostion.
-        Une formule mathématique calcule l'efficassité en fonction des seuils (ci-dessous) que vous déterminez.
+        Un score est calculé en fonction des indicateurs mis à disposition.
+        Une formule mathématique calcule l'efficacité en fonction des seuils (ci-dessous) que vous déterminez.
       icon: mdi:weather-sunny
       collapsed: true
       input:
@@ -203,7 +203,7 @@ blueprint:
     
         max_humidity_ok:
           name: Humidité max pour gagner 1 point
-          description: "Seuil maximal où le taux d'humidité ambiant permet de faire sécher plus vite le linge. Au dessus de ce seuil, le séchage sera plus lent."
+          description: "Seuil maximal où le taux d'humidité ambiant permet de faire sécher plus vite le linge. Au-dessus de ce seuil, le séchage sera plus lent."
           default: 65
           selector:
             number:
@@ -225,8 +225,8 @@ blueprint:
         max_cloud:
           name: Couverture nuageuse max (%)
           description: >
-            Plus il y a de nuages, moins il y a de soleil et donc plus long sera le temps de séchage car l'efficassité sera atténuée par l'accumulation des nuages.
-            Seuil au dessus duquel un malus sera apposé car trop de nuages.
+            Plus il y a de nuages, moins il y a de soleil et donc plus long sera le temps de séchage car l'efficacité sera atténuée par l'accumulation des nuages.
+            Seuil au-dessus duquel un malus sera apposé car trop de nuages.
           default: 60
           selector:
             number:
@@ -236,7 +236,7 @@ blueprint:
     
         min_uv:
           name: UV minimum pour bonus
-          description: "Indiquateur qui défini l'action des rayons du soleil. Plus il y en a et mieux c'est."
+          description: "Indicateur qui définit l'action des rayons du soleil. Plus il y en a et mieux c'est."
           default: 3
           selector:
             number:
