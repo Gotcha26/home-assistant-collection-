@@ -8,6 +8,7 @@ blueprint:
     ups_battery_sensor:
       name: Capteur de batterie UPS
       description: Capteur NUT ou similaire pour le niveau de batterie (%)
+      defaut: "sensor.eaton3s_charge_de_la_batterie"
       selector:
         entity:
           domain: sensor
@@ -23,6 +24,7 @@ blueprint:
     load_power_sensor:
       name: Capteur de puissance
       description: Capteur de consommation pour calcul de l'autonomie
+      defaut: "sensor.0x94a081fffe5edc95_power"
       selector:
         entity:
           domain: sensor
@@ -85,7 +87,7 @@ action:
       - conditions:
           - condition: template
             value_template: "{{ shutdown_actions | length > 0 }}"
-                                                
+                                  
         sequence:
           - service: notify.notify
             data:
