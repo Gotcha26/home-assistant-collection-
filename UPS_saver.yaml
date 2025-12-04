@@ -1,15 +1,25 @@
 blueprint:
   name: UPS Notification & Graceful Shutdown
   description: >
-    Envoie des notifications en fonction du niveau de batterie UPS et calcule l'autonomie restante. Permet l'arrêt contrôlé d'appareils sur le réseau.
+    Envoie des notifications en fonction du niveau de batterie UPS et calcule l'autonomie restante.
+    Permet l'arrêt contrôlé d'appareils sur le réseau.
   domain: automation
   input:
     ups_battery_sensor:
       name: Capteur de batterie UPS
-      description: Capteur NUT ou similaire pour le niveau de batterie
+      description: Capteur NUT ou similaire pour le niveau de batterie (%)
       selector:
         entity:
           domain: sensor
+    ups_power_w:
+      name: Puissance nominale de l'UPS (W)
+      description: Puissance que l'UPS peut délivrer
+      default: 330
+      selector:
+        number:
+          min: 1
+          max: 10000
+          unit_of_measurement: "W"
     load_power_sensor:
       name: Capteur de puissance
       description: Capteur de consommation pour calcul de l'autonomie
@@ -19,7 +29,7 @@ blueprint:
     notification_threshold:
       name: Seuil de batterie pour notification
       description: Niveau de batterie (%) ou autonomie en heures pour déclencher une notification
-      default: 30
+      default: 20
       selector:
         number:
           min: 1
@@ -28,21 +38,23 @@ blueprint:
     minimal_duration:
       name: Durée minimale avant déclenchement
       description: Temps minimal en secondes avant que la notification ne soit envoyée pour éviter les micro-coupures
-      default: 60
+      default: 10
       selector:
         number:
           min: 10
-          max: 3600
+          max: 60
           unit_of_measurement: "s"
     shutdown_services:
       name: Services ou actions à exécuter pour arrêt contrôlé
       description: Liste de services ou scripts à appeler pour éteindre des appareils en douceur
+      default: []
       selector:
         action: {}
 
 variables:
   battery: !input ups_battery_sensor
   power: !input load_power_sensor
+  ups_w: !input ups_power_w
   threshold: !input notification_threshold
   duration: !input minimal_duration
   shutdown_actions: !input shutdown_services
@@ -58,17 +70,27 @@ action:
   - variables:
       battery_level: "{{ states(battery) | float }}"
       load_watt: "{{ states(power) | float }}"
-      autonomie_h: "{{ (battery_level / 100) * 1000 / load_watt }}" # Ajuster capacité batterie si besoin
+      autonomie_h: >
+        {% if load_watt > 0 %}
+          {{ (battery_level / 100) * ups_w / load_watt }}
+        {% else %}
+          0
+        {% endif %}
+  - service: notify.notify
+    data:
+      title: "UPS Attention"
+      message: "Niveau batterie: {{ battery_level }}%. Autonomie estimée: {{ autonomie_h | round(2) }} h."
+
   - choose:
       - conditions:
-          - condition: numeric_state
-            entity_id: !input ups_battery_sensor
-            below: !input notification_threshold
+          - condition: template
+            value_template: "{{ shutdown_actions | length > 0 }}"
+                                                
         sequence:
           - service: notify.notify
             data:
               title: "UPS Attention"
-              message: "Niveau batterie: {{ battery_level }}%. Autonomie estimée: {{ autonomie_h | round(2) }} h."
+              message: "Niveau batterie: {{ battery_level }}%. Autonomie estimée: {{ autonomie_h | round(2) }} h."                                  
           - repeat:
               sequence: !input shutdown_services
               count: "{{ shutdown_actions | length }}"
