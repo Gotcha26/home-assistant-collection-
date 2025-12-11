@@ -1,98 +1,191 @@
 blueprint:
-  name: UPS Notification & Graceful Shutdown
+  name: Gestion complète UPS Eaton / Homelab (Blueprint)
   description: >
-    Envoie des notifications en fonction du niveau de batterie UPS et calcule l'autonomie restante.
-    Permet l'arrêt contrôlé d'appareils sur le réseau.
+    Notifications UPS + arrêt automatique du homelab + boutons mobiles.
+    Version Blueprint entièrement configurable.
   domain: automation
   input:
-    ups_battery_sensor:
-      name: Capteur de batterie UPS
-      description: Capteur NUT ou similaire pour le niveau de batterie (%)
-      defaut: "sensor.eaton3s_charge_de_la_batterie"
+    ups_state:
+      name: État UPS (code d’état)
+      description: Entité permettant de détecter OB / OL / ALARM.
       selector:
         entity:
-          domain: sensor
-    ups_power_w:
-      name: Puissance nominale de l'UPS (W)
-      description: Puissance que l'UPS peut délivrer
-      default: 330
-      selector:
-        number:
-          min: 1
-          max: 10000
-          unit_of_measurement: "W"
-    load_power_sensor:
-      name: Capteur de puissance
-      description: Capteur de consommation pour calcul de l'autonomie
-      defaut: "sensor.0x94a081fffe5edc95_power"
-      selector:
-        entity:
-          domain: sensor
-    notification_threshold:
-      name: Seuil de batterie pour notification
-      description: Niveau de batterie (%) ou autonomie en heures pour déclencher une notification
-      default: 20
-      selector:
-        number:
-          min: 1
-          max: 100
-          unit_of_measurement: "%"
-    minimal_duration:
-      name: Durée minimale avant déclenchement
-      description: Temps minimal en secondes avant que la notification ne soit envoyée pour éviter les micro-coupures
-      default: 10
-      selector:
-        number:
-          min: 10
-          max: 60
-          unit_of_measurement: "s"
-    shutdown_services:
-      name: Services ou actions à exécuter pour arrêt contrôlé
-      description: Liste de services ou scripts à appeler pour éteindre des appareils en douceur
-      default: []
-      selector:
-        action: {}
+          filter:
+            - domain: sensor
 
-variables:
-  battery: !input ups_battery_sensor
-  power: !input load_power_sensor
-  ups_w: !input ups_power_w
-  threshold: !input notification_threshold
-  duration: !input minimal_duration
-  shutdown_actions: !input shutdown_services
+    ups_runtime:
+      name: Autonomie UPS (en secondes)
+      description: Entité contenant l’autonomie restante en secondes.
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+
+    ups_human_state:
+      name: État UPS (texte)
+      description: Entité texte décrivant l’état de l’UPS.
+      selector:
+        entity:
+          filter:
+            - domain: sensor
+
+    mobile_notify:
+      name: Service de notification mobile
+      description: Service `notify.xxx` pour envoyer les messages.
+      selector:
+        action:
+
+    shutdown_service:
+      name: Service d’arrêt du homelab
+      description: Service (shell_command, script, etc.) qui déclenche l’arrêt Proxmox.
+      selector:
+        action:
+
+    critical_pattern:
+      name: Codes d’état batterie critique
+      description: Ex : "ALARM OB OL"
+      default: "ALARM OB OL"
+      selector:
+        text:
+
+    critical_delay:
+      name: Durée avant arrêt critique (secondes)
+      default: 30
+      selector:
+        number:
+          min: 5
+          max: 600
+          unit_of_measurement: sec
+          mode: slider
+
+mode: single
 
 trigger:
-  - platform: numeric_state
-    entity_id: !input ups_battery_sensor
-    below: !input notification_threshold
+  - id: coupure_30s
+    platform: state
+    entity_id: !input ups_state
+    to: "OB"
+    for: "00:00:05"
+
+  - id: autonomie_critique
+    platform: state
+    entity_id: !input ups_state
+    to: !input critical_pattern
     for:
-      seconds: !input minimal_duration
+      seconds: !input critical_delay
+
+  - id: courant_retour
+    platform: state
+    entity_id: !input ups_state
+    to: "OL"
+
+  - id: check_remaining
+    platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: CHECK_REMAINING
 
 action:
-  - variables:
-      battery_level: "{{ states(battery) | float }}"
-      load_watt: "{{ states(power) | float }}"
-      autonomie_h: >
-        {% if load_watt > 0 %}
-          {{ (battery_level / 100) * ups_w / load_watt }}
-        {% else %}
-          0
-        {% endif %}
-  - service: notify.notify
-    data:
-      title: "UPS Attention"
-      message: "Niveau batterie: {{ battery_level }}%. Autonomie estimée: {{ autonomie_h | round(2) }} h."
-
   - choose:
+
       - conditions:
-          - condition: template
-            value_template: "{{ shutdown_actions | length > 0 }}"
-                                  
+          - condition: trigger
+            id: coupure_30s
         sequence:
-          - service: notify.notify
+          - alias: "Notification coupure électrique"
+            service: !input mobile_notify
             data:
-              title: "UPS Attention"
-              message: "Niveau batterie: {{ battery_level }}%. Autonomie estimée: {{ autonomie_h | round(2) }} h."                                  
-          - repeat:
-              sequence: !input shutdown_services
-              count: "{{ shutdown_actions | length }}"
+              title: ⚠️ Coupure électrique détectée
+              message: >-
+                {% set s = states(blueprint.inputs.ups_runtime) | int(0) %}
+                {% if s > 0 %}
+                  {% set h = s // 3600 %}
+                  {% set m = (s % 3600) // 60 %}
+                  {% set sec = s % 60 %}
+                  {% set end = (now() + timedelta(seconds=s)).strftime("%H:%M:%S") %}
+                  L'UPS est sur batterie depuis plus de 30 secondes.  
+                  **Autonomie restante : {{ "%02d:%02d:%02d" | format(h, m, sec) }}**  
+                  **Extinction estimée à : {{ end }}**
+                {% else %}
+                  L'UPS est sur batterie depuis plus de 30 secondes.  
+                  Autonomie inconnue.
+                {% endif %}
+              data:
+                sticky: true
+                channel: UPS Alerts
+                importance: high
+                priority: high
+                actions:
+                  - action: CHECK_REMAINING
+                    title: Vérifier l'autonomie
+                  - action: FORCE_SHUTDOWN
+                    title: Forcer l'arrêt du homelab
+
+      - conditions:
+          - condition: trigger
+            id: autonomie_critique
+        sequence:
+          - alias: "Alerte critique + arrêt"
+            service: !input mobile_notify
+            data:
+              title: ⛔ Arrêt automatique homelab
+              message: >-
+                Niveau batterie critique détecté (`{{ states(blueprint.inputs.ups_state) }}`).  
+                Extinction immédiate et propre du homelab.
+              data:
+                sticky: true
+                channel: UPS Alerts
+                importance: high
+                priority: high
+          - delay:
+              seconds: !input critical_delay
+          - alias: "Lancement arrêt"
+            service: !input shutdown_service
+
+      - conditions:
+          - condition: trigger
+            id: courant_retour
+        sequence:
+          - alias: "Courant rétabli"
+            service: !input mobile_notify
+            data:
+              title: 🔌 Courant rétabli
+              message: >
+                L'alimentation secteur est revenue.  
+                L'UPS fonctionne normalement.
+              data:
+                sticky: true
+                channel: UPS Alerts
+                importance: high
+                priority: high
+
+      - conditions:
+          - condition: trigger
+            id: check_remaining
+        sequence:
+          - alias: "Check autonomie manuelle"
+            service: !input mobile_notify
+            data:
+              title: 🔍 Autonomie actuelle
+              message: >-
+                {% set s = states(blueprint.inputs.ups_runtime) | int(0) %}
+                {% if s > 0 %}
+                  {% set h = s // 3600 %}
+                  {% set m = (s % 3600) // 60 %}
+                  {% set sec = s % 60 %}
+                  {% set end = (now() + timedelta(seconds=s)).strftime("%H:%M:%S") %}
+                  Check-in.  
+                  **Autonomie : {{ "%02d:%02d:%02d" | format(h, m, sec) }}**  
+                  **Extinction estimée : {{ end }}**
+                {% else %}
+                  **Autonomie : inconnue**
+                {% endif %}  
+                **État UPS :** {{ states(blueprint.inputs.ups_human_state) }}
+              data:
+                sticky: true
+                channel: UPS Alerts
+                importance: high
+                priority: high
+                actions:
+                  - action: FORCE_SHUTDOWN
+                    title: Forcer l'arrêt du homelab
