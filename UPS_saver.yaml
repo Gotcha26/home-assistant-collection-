@@ -110,6 +110,10 @@ blueprint:
 
 mode: single
 
+variables:
+  v_input_ups_runtime: !input ups_runtime
+  v_input_ups_state_text: !input ups_state_text
+
 trigger:
   - id: OB_begin
     platform: state
@@ -147,13 +151,13 @@ action:
             data:
               title: "⚠️ Coupure électrique détectée"
               message: >-
-                {% set s = states(!input ups_runtime) | int(0) %}
+                {% set s = states(v_input_ups_runtime) | int(0) %}
                 {% if s > 0 %}
                   {% set h = s // 3600 %}
                   {% set m = (s % 3600) // 60 %}
                   {% set sec = s % 60 %}
                   {% set end = (now() + timedelta(seconds=s)).strftime("%H:%M:%S") %}
-                  L'UPS est sur batterie depuis plus de 30 secondes.  
+                  L'UPS est sur batterie.  
                   **Autonomie restante : {{ "%02d:%02d:%02d"|format(h, m, sec) }}**  
                   **Extinction estimée à : {{ end }}**
                 {% else %}
@@ -216,7 +220,7 @@ action:
             data:
               title: "🔍 Autonomie actuelle"
               message: >-
-                {% set s = states(!input ups_runtime) | int(0) %}
+                {% set s = states(v_input_ups_runtime) | int(0) %}
                 {% if s > 0 %}
                   {% set h = s // 3600 %}
                   {% set m = (s % 3600) // 60 %}
@@ -228,7 +232,7 @@ action:
                 {% else %}
                   **Autonomie : inconnue**
                 {% endif %}
-                **État UPS :** {{ states(!input ups_state_text) }}
+                **État UPS :** {{ states(v_input_ups_state_text) }}
               sticky: true
               channel: !input notif_channel
               importance: high
