@@ -155,7 +155,7 @@ trigger:
   - id: autonomie_critique
     platform: state
     entity_id: !input ups_state_code
-    to: !input critical_delay
+    to: !input critical_pattern
     for: "{{ v_critical_delay | int }} seconds"
 
   - id: courant_retour
