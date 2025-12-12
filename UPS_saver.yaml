@@ -152,7 +152,7 @@ action:
           - condition: trigger
             id: autonomie_critique
         sequence:
-          - service: !input notifiy_mobile
+          - service: !input notify_mobile
             data:
               title: "⛔ Arrêt automatique homelab"
               message: >-
