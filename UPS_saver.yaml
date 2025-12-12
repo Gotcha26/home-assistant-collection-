@@ -16,11 +16,11 @@ blueprint:
       collapsed: false
       input:
         ups_state_code:
-        name: État UPS (code d’état)
-        description: Entité permettant de détecter OB / OL / ALARM.
-        selector:
-          entity:
-            domain: sensor
+          name: État UPS (code d’état)
+          description: Entité permettant de détecter OB / OL / ALARM.
+          selector:
+            entity:
+              domain: sensor
 
       ups_runtime:
         name: Autonomie UPS (en secondes)
