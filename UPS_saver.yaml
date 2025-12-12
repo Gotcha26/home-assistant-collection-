@@ -16,7 +16,7 @@ blueprint:
       collapsed: false
       input:
         ups_state_code:
-          name: Code d’état
+          name: Code d'état
           description: >
             Entité permettant de détecter OB / OL / ALARM.<br/>
             Défaut : "Code d'état"<br/>
@@ -29,7 +29,7 @@ blueprint:
         ups_runtime:
           name: Autonomie de la batterie
           description: >
-            Entité définissant l’autonomie restante (en secondes).<br/>
+            Entité définissant l'autonomie restante (en secondes).<br/>
             Défaut : "Autonomie de la batterie"<br/>
             (ex: `sensor.eaton3s_autonomie_de_la_batterie`)
           default: "sensor.eaton3s_autonomie_de_la_batterie"
@@ -40,7 +40,7 @@ blueprint:
         ups_state_text:
           name: État
           description: >
-            Entité texte décrivant l’état de l’UPS.<br/>
+            Entité texte décrivant l'état de l'UPS.<br/>
             Défaut : "État"<br/>
             (ex : `sensor.eaton3s_etat`)
           default: "sensor.eaton3s_etat"
@@ -79,16 +79,16 @@ blueprint:
       collapsed: true
       input:
         shutdown_service:
-          name: "Service d’arrêt du homelab"
+          name: "Service d'arrêt du homelab"
           description: >
-            Service (shell_command, script, etc.) déclenchant l’arrêt Proxmox.<br/>
+            Service (shell_command, script, etc.) déclenchant l'arrêt Proxmox.<br/>
             (ex : `shell_command.create_shutdown_file`)
           default: "shell_command.create_shutdown_file"
           selector:
             text:
 
         critical_pattern:
-          name: Codes d’état batterie critique
+          name: Codes d'état batterie critique
           description: >
             Texte exact de l'entité lors du passage en alarme.<br/>
             Par défaut : "ALARM OB OL"<br/>
@@ -114,13 +114,11 @@ variables:
   v_ups_runtime: !input ups_runtime
   v_ups_state_code: !input ups_state_code
   v_ups_state_text: !input ups_state_text
+  v_notify_mobile: !input notify_mobile
+  v_notif_channel: !input notif_channel
+  v_shutdown_service: !input shutdown_service
+  v_critical_pattern: !input critical_pattern
   v_critical_delay: !input critical_delay
-  critical_pattern: >
-    {% if inputs.critical_pattern | trim == "" %}
-      ALARM OB OL
-    {% else %}
-      {{ inputs.critical_pattern }}
-    {% endif %}
 
 trigger:
   - id: OB_begin
@@ -133,7 +131,8 @@ trigger:
     platform: state
     entity_id: !input ups_state_code
     to: !input critical_pattern
-    for: "{{ v_critical_delay | int }} seconds"
+    for:
+      seconds: !input critical_delay
 
   - id: courant_retour
     platform: state
@@ -154,11 +153,11 @@ action:
           - condition: trigger
             id: OB_begin
         sequence:
-          - service: !input notify_mobile
+          - service: "{{ v_notify_mobile }}"
             data:
               title: "⚠️ Coupure électrique détectée"
               message: >
-                {% set s = states(!input ups_runtime) | int(0) %}
+                {% set s = states(v_ups_runtime) | int(0) %}
                 {% if s > 0 %}
                   {% set h = s // 3600 %}
                   {% set m = (s % 3600) // 60 %}
@@ -172,7 +171,7 @@ action:
                   Autonomie inconnue.
                 {% endif %}
               sticky: true
-              channel: !input notif_channel
+              channel: "{{ v_notif_channel }}"
               importance: high
               priority: high
               actions:
@@ -186,35 +185,35 @@ action:
           - condition: trigger
             id: autonomie_critique
         sequence:
-          - service: !input notify_mobile
+          - service: "{{ v_notify_mobile }}"
             data:
               title: "⛔ Arrêt automatique homelab"
               message: >
-                Batterie critique détectée (`{{ states(!input ups_state_code) }}`).  
+                Batterie critique détectée (`{{ states(v_ups_state_code) }}`).  
                 Extinction immédiate et propre du homelab.
               sticky: true
-              channel: !input notif_channel
+              channel: "{{ v_notif_channel }}"
               importance: high
               priority: high
 
           - delay:
               seconds: "{{ v_critical_delay }}"
 
-          - service: !input shutdown_service
+          - service: "{{ v_shutdown_service }}"
 
       # --- Courant rétabli ---
       - conditions:
           - condition: trigger
             id: courant_retour
         sequence:
-          - service: !input notify_mobile
+          - service: "{{ v_notify_mobile }}"
             data:
               title: "🔌 Courant rétabli"
               message: >
                 L'alimentation secteur est revenue.  
                 L'UPS fonctionne normalement.
               sticky: true
-              channel: !input notif_channel
+              channel: "{{ v_notif_channel }}"
               importance: high
               priority: high
 
@@ -223,11 +222,11 @@ action:
           - condition: trigger
             id: check_remaining
         sequence:
-          - service: !input notify_mobile
+          - service: "{{ v_notify_mobile }}"
             data:
               title: "🔍 Autonomie actuelle"
               message: >
-                {% set s = states(!input ups_runtime) | int(0) %}
+                {% set s = states(v_ups_runtime) | int(0) %}
                 {% if s > 0 %}
                   {% set h = s // 3600 %}
                   {% set m = (s % 3600) // 60 %}
@@ -239,9 +238,9 @@ action:
                 {% else %}
                   **Autonomie : inconnue**
                 {% endif %}
-                **État UPS :** {{ states(!input ups_state_text) }}
+                **État UPS :** {{ states(v_ups_state_text) }}
               sticky: true
-              channel: !input notif_channel
+              channel: "{{ v_notif_channel }}"
               importance: high
               priority: high
               actions:
