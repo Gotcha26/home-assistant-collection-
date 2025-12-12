@@ -13,65 +13,65 @@ blueprint:
       collapsed: false
       input:
 
-      ups_state:
-        name: État UPS (code d’état)
-        description: Entité permettant de détecter OB / OL / ALARM.
-        selector:
-          entity:
-            filter:
-              - domain: sensor
+        ups_state:
+          name: État UPS (code d’état)
+          description: Entité permettant de détecter OB / OL / ALARM.
+          selector:
+            entity:
+              filter:
+                - domain: sensor
 
-      ups_runtime:
-        name: Autonomie UPS (en secondes)
-        description: Entité contenant l’autonomie restante en secondes.
-        selector:
-          entity:
-            filter:
-              - domain: sensor
+        ups_runtime:
+          name: Autonomie UPS (en secondes)
+          description: Entité contenant l’autonomie restante en secondes.
+          selector:
+            entity:
+              filter:
+                - domain: sensor
 
-      ups_human_state:
-        name: État UPS (texte)
-        description: Entité texte décrivant l’état de l’UPS.
-        selector:
-          entity:
-            filter:
-              - domain: sensor
+        ups_human_state:
+          name: État UPS (texte)
+          description: Entité texte décrivant l’état de l’UPS.
+          selector:
+            entity:
+              filter:
+                - domain: sensor
 
-      critical_pattern:
-        name: Codes d’état batterie critique
-        description: 'Ex : "ALARM OB OL"'
-        default: "ALARM OB OL"
-        selector:
-          text:
+        critical_pattern:
+          name: Codes d’état batterie critique
+          description: 'Ex : "ALARM OB OL"'
+          default: "ALARM OB OL"
+          selector:
+            text:
 
-      critical_delay:
-        name: Durée avant arrêt critique (secondes)
-        default: 30
-        selector:
-          number:
-            min: 5
-            max: 600
-            unit_of_measurement: sec
-            mode: slider
+        critical_delay:
+          name: Durée avant arrêt critique (secondes)
+          default: 30
+          selector:
+            number:
+              min: 5
+              max: 600
+              unit_of_measurement: sec
+              mode: slider
 
     configuration_notifications:
       name: "2 - Configuration notifications"
-      description: "Paramètres de votre UPS."
+      description: "Paramètres autres."
       icon: mdi:checkbox-blank-badge
       collapsed: true
       input:
 
-      mobile_notify:
-        name: Service de notification mobile
-        description: Service `notify.xxx` pour envoyer les messages.
-        selector:
-          action:
+        mobile_notify:
+          name: Service de notification mobile
+          description: Service `notify.xxx` pour envoyer les messages.
+          selector:
+            action:
 
-      shutdown_service:
-        name: Service d’arrêt du homelab
-        description: Service (shell_command, script, etc.) qui déclenche l’arrêt Proxmox.
-        selector:
-          action:
+        shutdown_service:
+          name: Service d’arrêt du homelab
+          description: Service (shell_command, script, etc.) qui déclenche l’arrêt Proxmox.
+          selector:
+            action:
 
 mode: single
 
