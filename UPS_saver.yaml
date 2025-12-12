@@ -41,7 +41,7 @@ blueprint:
             Service utilisé pour la notification.<br/>
             (ex :  `notify.mobile_app_sm_s928b`)
           selector:
-            action:
+            text:
 
         notif_channel:
           name: Canal Android (optionnel)
@@ -64,7 +64,8 @@ blueprint:
             Service (shell_command, script, etc.) déclenchant l’arrêt Proxmox.<br/>
             (ex : `shell_command.create_shutdown_file`)
           selector:
-            action:
+            text:
+              pattern: '^[a-z_]+\.[a-z_]+$'
 
         critical_pattern:
           name: Codes d’état batterie critique
