@@ -186,7 +186,7 @@ action:
             data:
               title: "⚠️ Coupure électrique détectée"
               message: >-
-                {% set s = (states(v_ups_runtime) | int(0)) %}
+                {% set s = states(v_ups_runtime) | int(0) %}
                 {% if s > 0 %}
                   {% set h = s // 3600 %}
                   {% set m = (s % 3600) // 60 %}
@@ -255,7 +255,7 @@ action:
             data:
               title: "🔍 Autonomie actuelle"
               message: >-
-                {% set s = (states(inputs.ups_runtime) | int(0)) %}
+                {% set s = states(v_ups_runtime) | int(0) %}
                 {% if s > 0 %}
                   {% set h = s // 3600 %}
                   {% set m = (s % 3600) // 60 %}
