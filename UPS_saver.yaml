@@ -173,7 +173,7 @@ action:
             data:
               title: "⚠️ Coupure électrique détectée"
               message: >-
-                {% set s = (states(!input ups_runtime) | int(0)) %}
+                {% set s = (states(inputs.ups_runtime) | int(0)) %}
                 {% if s > 0 %}
                   {% set h = s // 3600 %}
                   {% set m = (s % 3600) // 60 %}
@@ -205,7 +205,7 @@ action:
             data:
               title: "⛔ Arrêt automatique homelab"
               message: >-
-                Batterie critique détectée (`{{ states(!input ups_state_code) }}`).  
+                Batterie critique détectée (`{{ states(inputs.ups_state_code) }}`).  
                 Extinction immédiate et propre du homelab.
               sticky: true
               channel: UPS Alerts
@@ -242,7 +242,7 @@ action:
             data:
               title: "🔍 Autonomie actuelle"
               message: >-
-                {% set s = (states(!input ups_runtime) | int(0)) %}
+                {% set s = (states(inputs.ups_runtime) | int(0)) %}
                 {% if s > 0 %}
                   {% set h = s // 3600 %}
                   {% set m = (s % 3600) // 60 %}
@@ -254,7 +254,7 @@ action:
                 {% else %}
                   **Autonomie : inconnue**
                 {% endif %}
-                **État UPS :** {{ states(!input ups_state_text) }}
+                **État UPS :** {{ states(inputs.ups_state_text) }}
               sticky: true
               channel: UPS Alerts
               importance: high
