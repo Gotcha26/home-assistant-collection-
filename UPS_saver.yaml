@@ -62,7 +62,7 @@ blueprint:
     configuration_shell:
       name: "3 - Configuration spécifique"
       description: "Configuration des actions spécifiques."
-      icon: 
+      icon: mdi:wrench-clock
       collapsed: true
       input:
 
