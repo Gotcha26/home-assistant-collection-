@@ -150,7 +150,7 @@ trigger:
     platform: state
     entity_id: !input ups_state_code
     to: !input critical_pattern
-    for: "{{ v_critical_delay | int }} seconds"
+    for: "{{ !input critical_delay | int }} seconds"
 
   - id: courant_retour
     platform: state
@@ -180,7 +180,7 @@ action:
             data:
               title: "⚠️ Coupure électrique détectée"
               message: >-
-                {% set s = states(!input ups_runtime) | int(0) %}
+                {% set s = states('' + !input ups_runtime + '') | int(0) %}
                 {% if s > 0 %}
                   {% set h = s // 3600 %}
                   {% set m = (s % 3600) // 60 %}
@@ -212,7 +212,7 @@ action:
             data:
               title: "⛔ Arrêt automatique homelab"
               message: >-
-                Batterie critique détectée (`{{ states(!input ups_state_code) }}`).  
+                Batterie critique détectée (`{{ states('' + !input ups_state_code + '') }}`).  
                 Extinction immédiate et propre du homelab.
               sticky: true
               channel: UPS Alerts
@@ -220,7 +220,7 @@ action:
               priority: high
 
           - delay:
-              seconds: "{{ v_critical_delay }}"
+              seconds: "{{'' + !input critical_delay + ''}}"
 
           - service: !input shutdown_service
 
@@ -249,7 +249,7 @@ action:
             data:
               title: "🔍 Autonomie actuelle"
               message: >-
-                {% set s = states(!input ups_runtime) | int(0) %}
+                {% set s = states('' + !input ups_runtime + '') | int(0) %}
                 {% if s > 0 %}
                   {% set h = s // 3600 %}
                   {% set m = (s % 3600) // 60 %}
@@ -261,7 +261,7 @@ action:
                 {% else %}
                   **Autonomie : inconnue**
                 {% endif %}
-                **État UPS :** {{ states(!input ups_state_text) }}
+                **État UPS :** {{ states('' + !input ups_state_text + '') }}
               sticky: true
               channel: UPS Alerts
               importance: high
