@@ -15,7 +15,6 @@ blueprint:
       icon: mdi:toolbox-outline
       collapsed: false
       input:
-
         ups_state_code:
         name: État UPS (code d’état)
         description: Entité permettant de détecter OB / OL / ALARM.
@@ -48,7 +47,6 @@ blueprint:
       icon: mdi:checkbox-blank-badge
       collapsed: true
       input:
-
         notify_mobile:
           name: "Service de notification mobile"
           description: >
@@ -71,7 +69,6 @@ blueprint:
       icon: mdi:wrench-clock
       collapsed: true
       input:
-
         shutdown_service:
           name: "Service d’arrêt du homelab"
           description: >
