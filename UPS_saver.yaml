@@ -40,7 +40,7 @@ blueprint:
         critical_pattern:
           name: Codes d’état batterie critique
           description: >
-            Texte de l'entité lors du passage en alarme.
+            Texte de l'entité lors du passage en alarme.<br/>
             Par défaut : "ALARM OB OL"
           default: "ALARM OB OL"
           selector:
