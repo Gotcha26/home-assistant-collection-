@@ -51,11 +51,20 @@ blueprint:
       collapsed: true
       input:
 
-        mobile_notify:
+        notify_mobile:
           name: Service de notification mobile
-          description: Service `notify.xxx` utilisé pour envoyer les messages.
+          description: >
+            Service utilisé pour la notification.<br/>
+            Exemple : "notify.mobile_app_sm_s928b"
           selector:
-            action:
+            text:
+
+    configuration_shell:
+      name: "3 - Configuration spécifique"
+      description: "Configuration des actions spécifiques."
+      icon: 
+      collapsed: true
+      input:
 
         shutdown_service:
           name: Service d’arrêt du homelab
@@ -110,7 +119,7 @@ action:
           - condition: trigger
             id: coupure_30s
         sequence:
-          - service: !input mobile_notify
+          - service: !input notify_mobile
             data:
               title: "⚠️ Coupure électrique détectée"
               message: >-
@@ -143,7 +152,7 @@ action:
           - condition: trigger
             id: autonomie_critique
         sequence:
-          - service: !input mobile_notify
+          - service: !input notifiy_mobile
             data:
               title: "⛔ Arrêt automatique homelab"
               message: >-
@@ -165,7 +174,7 @@ action:
           - condition: trigger
             id: courant_retour
         sequence:
-          - service: !input mobile_notify
+          - service: !input notify_mobile
             data:
               title: "🔌 Courant rétabli"
               message: >
@@ -182,7 +191,7 @@ action:
           - condition: trigger
             id: check_remaining
         sequence:
-          - service: !input mobile_notify
+          - service: !input notify_mobile
             data:
               title: "🔍 Autonomie actuelle"
               message: >-
