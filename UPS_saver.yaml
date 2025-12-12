@@ -70,7 +70,7 @@ blueprint:
           name: Codes d’état batterie critique
           description: >
             Texte exact de l'entité lors du passage en alarme.<br/>
-            Par défaut : "ALARM OB OL"  
+            Par défaut : "ALARM OB OL"<br/>
             **Ne modifiez pas ce champ sauf exception !**
           default: "ALARM OB OL"
           selector:
@@ -157,7 +157,7 @@ action:
           - condition: trigger
             id: OB_begin
         sequence:
-          - service: "{{ !input notify_mobile }}"
+          - service: !input notify_mobile
             data:
               title: "⚠️ Coupure électrique détectée"
               message: >-
@@ -212,7 +212,7 @@ action:
           - condition: trigger
             id: courant_retour
         sequence:
-          - service: "{{ !input notify_mobile }}"
+          - service: !input notify_mobile
             data:
               title: "🔌 Courant rétabli"
               message: >
@@ -229,7 +229,7 @@ action:
           - condition: trigger
             id: check_remaining
         sequence:
-          - service: "{{ !input notify_mobile }}"
+          - service: !input notify_mobile
             data:
               title: "🔍 Autonomie actuelle"
               message: >-
