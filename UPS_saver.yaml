@@ -39,7 +39,9 @@ blueprint:
 
         critical_pattern:
           name: Codes d’état batterie critique
-          description: 'Ex : "ALARM OB OL"'
+          description: >
+            Texte de l'entité lors du passage en alarme.
+            Par défaut : "ALARM OB OL"
           default: "ALARM OB OL"
           selector:
             text:
@@ -55,8 +57,8 @@ blueprint:
               mode: slider
 
     configuration_notifications:
-      name: "2 - Configuration notifications"
-      description: "Paramètres autres."
+      name: "2 - Configuration notifications App Comagnon"
+      description: "Service de notification via l'application mobile Compagnon."
       icon: mdi:checkbox-blank-badge
       collapsed: true
       input:
