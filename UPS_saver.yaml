@@ -6,64 +6,72 @@ blueprint:
   domain: automation
   input:
 
-    # ----------------------------
-    # 1 - Configuration de l'UPS
-    # ----------------------------
-    ups_state:
-      name: État UPS (code d’état)
-      description: Entité permettant de détecter OB / OL / ALARM.
-      selector:
-        entity:
-          filter:
-            - domain: sensor
+    configuration_ups:
+      name: "1 - Configuration de l'UPS"
+      description: "Paramètres de votre UPS."
+      icon: mdi:toolbox-outline
+      collapsed: false
+      input:
 
-    ups_runtime:
-      name: Autonomie UPS (en secondes)
-      description: Entité contenant l’autonomie restante en secondes.
-      selector:
-        entity:
-          filter:
-            - domain: sensor
+      ups_state:
+        name: État UPS (code d’état)
+        description: Entité permettant de détecter OB / OL / ALARM.
+        selector:
+          entity:
+            filter:
+              - domain: sensor
 
-    ups_human_state:
-      name: État UPS (texte)
-      description: Entité texte décrivant l’état de l’UPS.
-      selector:
-        entity:
-          filter:
-            - domain: sensor
+      ups_runtime:
+        name: Autonomie UPS (en secondes)
+        description: Entité contenant l’autonomie restante en secondes.
+        selector:
+          entity:
+            filter:
+              - domain: sensor
 
-    critical_pattern:
-      name: Codes d’état batterie critique
-      description: 'Ex : "ALARM OB OL"'
-      default: "ALARM OB OL"
-      selector:
-        text:
+      ups_human_state:
+        name: État UPS (texte)
+        description: Entité texte décrivant l’état de l’UPS.
+        selector:
+          entity:
+            filter:
+              - domain: sensor
 
-    critical_delay:
-      name: Durée avant arrêt critique (secondes)
-      default: 30
-      selector:
-        number:
-          min: 5
-          max: 600
-          unit_of_measurement: sec
-          mode: slider
+      critical_pattern:
+        name: Codes d’état batterie critique
+        description: 'Ex : "ALARM OB OL"'
+        default: "ALARM OB OL"
+        selector:
+          text:
 
-    # ----------------------------
-    # 2 - Notifications & Actions
-    # ----------------------------
-    mobile_notify:
-      name: Service de notification mobile
-      description: Service `notify.xxx` pour envoyer les messages.
-      selector:
-        action:
+      critical_delay:
+        name: Durée avant arrêt critique (secondes)
+        default: 30
+        selector:
+          number:
+            min: 5
+            max: 600
+            unit_of_measurement: sec
+            mode: slider
 
-    shutdown_service:
-      name: Service d’arrêt du homelab
-      description: Service (shell_command, script, etc.) qui déclenche l’arrêt Proxmox.
-      selector:
-        action:
+    configuration_notifications:
+      name: "2 - Configuration notifications"
+      description: "Paramètres de votre UPS."
+      icon: mdi:checkbox-blank-badge
+      collapsed: true
+      input:
+
+      mobile_notify:
+        name: Service de notification mobile
+        description: Service `notify.xxx` pour envoyer les messages.
+        selector:
+          action:
+
+      shutdown_service:
+        name: Service d’arrêt du homelab
+        description: Service (shell_command, script, etc.) qui déclenche l’arrêt Proxmox.
+        selector:
+          action:
 
 mode: single
 
@@ -95,9 +103,6 @@ trigger:
 action:
   - choose:
 
-      # --------------------------------------
-      # 1 - Coupure détectée (30 sec)
-      # --------------------------------------
       - conditions:
           - condition: trigger
             id: coupure_30s
@@ -131,9 +136,6 @@ action:
                   - action: FORCE_SHUTDOWN
                     title: Forcer l'arrêt du homelab
 
-      # --------------------------------------
-      # 2 - Batterie critique
-      # --------------------------------------
       - conditions:
           - condition: trigger
             id: autonomie_critique
@@ -155,9 +157,6 @@ action:
           - alias: "Lancement arrêt"
             service: !input shutdown_service
 
-      # --------------------------------------
-      # 3 - Rétablissement du courant
-      # --------------------------------------
       - conditions:
           - condition: trigger
             id: courant_retour
@@ -175,9 +174,6 @@ action:
                 importance: high
                 priority: high
 
-      # --------------------------------------
-      # 4 - Bouton : Vérifier autonomie
-      # --------------------------------------
       - conditions:
           - condition: trigger
             id: check_remaining
