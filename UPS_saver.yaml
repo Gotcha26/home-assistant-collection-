@@ -113,6 +113,11 @@ mode: single
 variables:
   v_input_ups_runtime: !input ups_runtime
   v_input_ups_state_text: !input ups_state_text
+  v_input_ups_state_code: !input ups_state_code
+  v_notify_mobile: !input notify_mobile
+  v_notif_channel: !input notif_channel
+  v_shutdown_service: !input shutdown_service
+  v_critical_delay: !input critical_delay
 
 trigger:
   - id: OB_begin
@@ -183,7 +188,7 @@ action:
             data:
               title: "⛔ Arrêt automatique homelab"
               message: >-
-                Batterie critique détectée (`{{ states(!input ups_state_code) }}`).  
+                Batterie critique détectée (`{{ states(v_input_ups_state_code) }}`).  
                 Extinction immédiate et propre du homelab.
               sticky: true
               channel: !input notif_channel
