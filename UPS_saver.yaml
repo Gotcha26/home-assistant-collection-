@@ -1,3 +1,18 @@
+Ce n’est pas un bug de syntaxe YAML ou Jinja, mais une limitation de Home Assistant :
+
+Dans un blueprint, !input fonctionne parfaitement pour les services, entity_id, channel, etc.
+
+Mais dès que tu veux utiliser un !input dans un template Jinja à l’intérieur d’un message: ou autre propriété qui attend une string, HA ne “résout” pas le !input en runtime avant le rendu du template.
+
+Même en passant par variables: dans le blueprint, Home Assistant ne peut pas interpréter correctement states(v_input_ups_runtime) si v_input_ups_runtime vient d’un input. La valeur du template reste vide ou non reconnue.
+
+En clair : les variables d’un blueprint ne peuvent pas être utilisées dans states() à l’intérieur d’un template message. Home Assistant évalue le template avant de “remplacer” l’input, donc ça foire.
+
+
+
+
+
+
 blueprint:
   name: Gestion complète UPS Eaton / Homelab (Blueprint)
   description: >
