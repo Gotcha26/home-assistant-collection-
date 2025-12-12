@@ -252,7 +252,7 @@ action:
                 {% else %}
                   **Autonomie : inconnue**
                 {% endif %}
-                **État UPS :** {{ states( !input ups_state_text) }}
+                **État UPS :** {{ states(!input ups_state_text) }}
               data:
                 sticky: true
                 channel: UPS Alerts
