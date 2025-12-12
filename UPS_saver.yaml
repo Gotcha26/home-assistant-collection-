@@ -8,6 +8,7 @@ blueprint:
 
   input:
 
+    # --- Configuration UPS ---
     configuration_ups:
       name: "1 - Configuration de l'UPS"
       description: "Paramètres de votre UPS."
@@ -26,7 +27,7 @@ blueprint:
                 - domain: sensor
 
 
-
+    # --- Notifications ---
     configuration_notifications:
       name: "2 - Configuration notifications App Compagnon"
       description: "Service de notification via l'application mobile Compagnon."
@@ -42,6 +43,14 @@ blueprint:
           selector:
             text:
 
+        notif_channel:
+          name: Canal Android (optionnel)
+          description: "Canal de notification préféré. Il faut créer en amont le canal s'il est nouveau !"
+          default: "UPS_channel"
+          selector:
+            text:
+
+    # --- Configuration élaborée ---
     configuration_shell:
       name: "3 - Configuration spécifique"
       description: "Configuration des actions spécifiques."
@@ -79,6 +88,11 @@ blueprint:
 
 mode: single
 
+
+# ======================================================
+# ===                 AUTOMATION                     ===
+# ======================================================
+
 variables:
 
   # Extraction automatique du préfixe UPS
@@ -91,8 +105,13 @@ variables:
   ups_runtime: "{{ ups_base ~ '_autonomie_de_la_batterie' }}"
   ups_human: "{{ ups_base ~ '_etat' }}"
 
+
+# ======================================================
+# ===                 TRIGGERS                       ===
+# ======================================================
+
 trigger:
-  - id: coupure_30s
+  - id: OB_begin
     platform: state
     entity_id: "{{ ups_code }}"
     to: "OB"
@@ -116,13 +135,18 @@ trigger:
     event_data:
       action: CHECK_REMAINING
 
+
+# ======================================================
+# ===                 ACTIONS                        ===
+# ======================================================
+
 action:
   - choose:
 
       # --- Coupure secteur ---
       - conditions:
           - condition: trigger
-            id: coupure_30s
+            id: OB_begin
         sequence:
           - service: !input notify_mobile
             data:
