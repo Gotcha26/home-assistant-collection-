@@ -205,7 +205,7 @@ action:
           - delay:
               seconds: !input critical_delay
 
-          - service: "{{ !input shutdown_service }}"
+          - service: !input shutdown_service
 
       # --- Courant rétabli ---
       - conditions:
