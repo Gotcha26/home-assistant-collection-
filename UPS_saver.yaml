@@ -21,22 +21,6 @@ blueprint:
               filter:
                 - domain: sensor
 
-        ups_runtime:
-          name: Autonomie UPS (en secondes)
-          description: Entité contenant l’autonomie restante en secondes.
-          selector:
-            entity:
-              filter:
-                - domain: sensor
-
-        ups_human_state:
-          name: État UPS (texte)
-          description: Entité texte décrivant l’état de l’UPS.
-          selector:
-            entity:
-              filter:
-                - domain: sensor
-
         critical_pattern:
           name: Codes d’état batterie critique
           description: >
@@ -114,7 +98,7 @@ action:
             data:
               title: ⚠️ Coupure électrique détectée
               message: >-
-                {% set s = states(blueprint.inputs.ups_runtime) | int(0) %}
+                {% set s = states(blueprint.inputs.ups_base ~ "_autonomie_de_la_batterie") | int(0) %}
                 {% if s > 0 %}
                   {% set h = s // 3600 %}
                   {% set m = (s % 3600) // 60 %}
@@ -185,7 +169,7 @@ action:
             data:
               title: 🔍 Autonomie actuelle
               message: >-
-                {% set s = states(blueprint.inputs.ups_runtime) | int(0) %}
+                {% set s = states(blueprint.inputs.ups_base ~ "_autonomie_de_la_batterie") | int(0) %}
                 {% if s > 0 %}
                   {% set h = s // 3600 %}
                   {% set m = (s % 3600) // 60 %}
@@ -197,7 +181,7 @@ action:
                 {% else %}
                   **Autonomie : inconnue**
                 {% endif %}  
-                **État UPS :** {{ states(blueprint.inputs.ups_human_state) }}
+                **État UPS :** {{ states(blueprint.inputs.ups_base ~ "_etat") }}
               data:
                 sticky: true
                 channel: UPS Alerts
