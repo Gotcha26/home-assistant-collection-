@@ -118,6 +118,20 @@ mode: single
 
 variables:
 
+  # --- UPS ---
+  v_ups_state_code: !input ups_state_code
+  v_ups_runtime: !input ups_runtime
+  v_ups_state_text: !input ups_state_text
+
+  # --- Notifications ---
+  v_notify_mobile: !input notify_mobile
+  v_notif_channel: !input notif_channel
+
+  # --- Configuration spécifique ---
+  v_shutdown_service: !input shutdown_service
+  v_critical_pattern: !input critical_pattern
+  v_critical_delay: !input critical_delay
+
   # fallback
   critical_pattern: >
     {% if inputs.critical_pattern | trim == "" %}
@@ -134,19 +148,19 @@ variables:
 trigger:
   - id: OB_begin
     platform: state
-    entity_id: !input ups_state_code
+    entity_id: v_ups_state_code
     to: "OB"
     for: "00:00:05"
 
   - id: autonomie_critique
     platform: state
-    entity_id: !input ups_state_code
-    to: !input critical_pattern
-    for: "{{ inputs.critical_delay | int }} seconds"
+    entity_id: v_ups_state_code
+    to: v_critical_delay
+    for: "{{ v_critical_delay | int }} seconds"
 
   - id: courant_retour
     platform: state
-    entity_id: !input ups_state_code
+    entity_id: v_ups_state_code
     to: "OL"
 
   - id: check_remaining
@@ -168,11 +182,11 @@ action:
           - condition: trigger
             id: OB_begin
         sequence:
-          - service: !input notify_mobile
+          - service: v_notify_mobile
             data:
               title: "⚠️ Coupure électrique détectée"
               message: >-
-                {% set s = (states(inputs.ups_runtime) | int(0)) %}
+                {% set s = (states(v_ups_runtime) | int(0)) %}
                 {% if s > 0 %}
                   {% set h = s // 3600 %}
                   {% set m = (s % 3600) // 60 %}
@@ -200,11 +214,11 @@ action:
           - condition: trigger
             id: autonomie_critique
         sequence:
-          - service: !input notify_mobile
+          - service: v_notify_mobile
             data:
               title: "⛔ Arrêt automatique homelab"
               message: >-
-                Batterie critique détectée (`{{ states(inputs.ups_state_code) }}`).  
+                Batterie critique détectée (`{{ states(v_ups_state_code) }}`).  
                 Extinction immédiate et propre du homelab.
               sticky: true
               channel: UPS Alerts
@@ -212,16 +226,16 @@ action:
               priority: high
 
           - delay:
-              seconds: "{{ inputs.critical_delay }}"
+              seconds: "{{ v_critical_delay }}"
 
-          - service: !input shutdown_service
+          - service: v_shutdown_service
 
       # --- Courant rétabli ---
       - conditions:
           - condition: trigger
             id: courant_retour
         sequence:
-          - service: !input notify_mobile
+          - service: v_notify_mobile
             data:
               title: "🔌 Courant rétabli"
               message: >
@@ -237,11 +251,11 @@ action:
           - condition: trigger
             id: check_remaining
         sequence:
-          - service: !input notify_mobile
+          - service: v_notify_mobile
             data:
               title: "🔍 Autonomie actuelle"
               message: >-
-                {% set s = (states(inputs.ups_runtime) | int(0)) %}
+                {% set s = (states(v_ups_runtime) | int(0)) %}
                 {% if s > 0 %}
                   {% set h = s // 3600 %}
                   {% set m = (s % 3600) // 60 %}
@@ -253,7 +267,7 @@ action:
                 {% else %}
                   **Autonomie : inconnue**
                 {% endif %}
-                **État UPS :** {{ states(inputs.ups_state_text) }}
+                **État UPS :** {{ states(v_ups_state_text) }}
               sticky: true
               channel: UPS Alerts
               importance: high
