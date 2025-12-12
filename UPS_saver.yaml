@@ -70,7 +70,7 @@ blueprint:
           name: Codes d’état batterie critique
           description: >
             Texte exact de l'entité lors du passage en alarme.<br/>
-            Par défaut : "ALARM OB OL"<br/<
+            Par défaut : "ALARM OB OL"  
             **Ne modifiez pas ce champ sauf exception !**
           default: "ALARM OB OL"
           selector:
