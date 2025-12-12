@@ -181,16 +181,15 @@ action:
                   L'UPS est sur batterie depuis plus de 30 secondes.  
                   Autonomie inconnue.
                 {% endif %}
-              data:
-                sticky: true
-                channel: UPS Alerts
-                importance: high
-                priority: high
-                actions:
-                  - action: CHECK_REMAINING
-                    title: Vérifier autonomie
-                  - action: FORCE_SHUTDOWN
-                    title: Forcer arrêt du homelab
+              sticky: true
+              channel: UPS Alerts
+              importance: high
+              priority: high
+              actions:
+                - action: CHECK_REMAINING
+                  title: Vérifier autonomie
+                - action: FORCE_SHUTDOWN
+                  title: Forcer arrêt du homelab
 
       # --- Autonomie critique ---
       - conditions:
@@ -203,11 +202,10 @@ action:
               message: >-
                 Batterie critique détectée (`{{ states(!input ups_state_code) }}`).  
                 Extinction immédiate et propre du homelab.
-              data:
-                sticky: true
-                channel: UPS Alerts
-                importance: high
-                priority: high
+              sticky: true
+              channel: UPS Alerts
+              importance: high
+              priority: high
 
           - delay:
               seconds: !input critical_delay
@@ -225,11 +223,10 @@ action:
               message: >
                 L'alimentation secteur est revenue.  
                 L'UPS fonctionne normalement.
-              data:
-                sticky: true
-                channel: UPS Alerts
-                importance: high
-                priority: high
+              sticky: true
+              channel: UPS Alerts
+              importance: high
+              priority: high
 
       # --- Bouton "Check autonomie" ---
       - conditions:
@@ -253,11 +250,10 @@ action:
                   **Autonomie : inconnue**
                 {% endif %}
                 **État UPS :** {{ states(!input ups_state_text) }}
-              data:
-                sticky: true
-                channel: UPS Alerts
-                importance: high
-                priority: high
-                actions:
-                  - action: FORCE_SHUTDOWN
-                    title: Forcer arrêt du homelab
+              sticky: true
+              channel: UPS Alerts
+              importance: high
+              priority: high
+              actions:
+                - action: FORCE_SHUTDOWN
+                  title: Forcer arrêt du homelab
