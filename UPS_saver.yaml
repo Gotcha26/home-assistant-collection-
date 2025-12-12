@@ -5,6 +5,14 @@ blueprint:
     Version Blueprint entièrement configurable.
   domain: automation
   input:
+
+    configuration_ups:
+      name: "1 - Configuration de l'UPS"
+      description: "Paramètres de votre UPS."
+      icon: mdi:toolbox-outline
+      collapsed: false
+      input:
+
     ups_state:
       name: État UPS (code d’état)
       description: Entité permettant de détecter OB / OL / ALARM.
@@ -29,18 +37,6 @@ blueprint:
           filter:
             - domain: sensor
 
-    mobile_notify:
-      name: Service de notification mobile
-      description: Service `notify.xxx` pour envoyer les messages.
-      selector:
-        action:
-
-    shutdown_service:
-      name: Service d’arrêt du homelab
-      description: Service (shell_command, script, etc.) qui déclenche l’arrêt Proxmox.
-      selector:
-        action:
-
     critical_pattern:
       name: Codes d’état batterie critique
       description: 'Ex : "ALARM OB OL"'
@@ -57,6 +53,25 @@ blueprint:
           max: 600
           unit_of_measurement: sec
           mode: slider
+
+    configuration_ups:
+      name: "2 - Configuration notifications"
+      description: "Paramètres de votre UPS."
+      icon: mdi:checkbox-blank-badge
+      collapsed: true
+      input:
+
+    mobile_notify:
+      name: Service de notification mobile
+      description: Service `notify.xxx` pour envoyer les messages.
+      selector:
+        action:
+
+    shutdown_service:
+      name: Service d’arrêt du homelab
+      description: Service (shell_command, script, etc.) qui déclenche l’arrêt Proxmox.
+      selector:
+        action:
 
 mode: single
 
