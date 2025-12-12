@@ -129,20 +129,20 @@ variables:
 trigger:
   - id: OB_begin
     platform: state
-    entity_id: "{{ inputs.ups_state_code }}"
+    entity_id: !input ups_state_code
     to: "OB"
     for: "00:00:05"
 
   - id: autonomie_critique
     platform: state
-    entity_id: "{{ inputs.ups_state_code }}"
+    entity_id: !input ups_state_code
     to: "{{ critical_pattern }}"
     for:
-      seconds: "{{ inputs.critical_delay }}"
+      seconds: !input critical_delay
 
   - id: courant_retour
     platform: state
-    entity_id: "{{ inputs.ups_state_code }}"
+    entity_id: !input ups_state_code
     to: "OL"
 
   - id: check_remaining
