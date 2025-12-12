@@ -118,18 +118,7 @@ mode: single
 
 variables:
 
-  # --- UPS ---
-  v_ups_state_code: !input ups_state_code
-  v_ups_runtime: !input ups_runtime
-  v_ups_state_text: !input ups_state_text
-
-  # --- Notifications ---
-  v_notify_mobile: !input notify_mobile
-  v_notif_channel: !input notif_channel
-
   # --- Configuration spécifique ---
-  v_shutdown_service: !input shutdown_service
-  v_critical_pattern: !input critical_pattern
   v_critical_delay: !input critical_delay
 
   # fallback
@@ -156,7 +145,7 @@ trigger:
     platform: state
     entity_id: !input ups_state_code
     to: !input critical_pattern
-    for: "{{ !input critical_delay | int }} seconds"
+    for: "{{ v_critical_delay | int }} seconds"
 
   - id: courant_retour
     platform: state
@@ -226,7 +215,7 @@ action:
               priority: high
 
           - delay:
-              seconds: "{{ !input critical_delay }}"
+              seconds: "{{ v_critical_delay }}"
 
           - service: !input shutdown_service
 
