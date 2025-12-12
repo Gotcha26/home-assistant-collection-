@@ -22,19 +22,19 @@ blueprint:
             entity:
               domain: sensor
 
-      ups_runtime:
-        name: Autonomie UPS (en secondes)
-        description: Entité définissant l’autonomie restante (en secondes).
-        selector:
-          entity:
-            domain: sensor
+        ups_runtime:
+          name: Autonomie UPS (en secondes)
+          description: Entité définissant l’autonomie restante (en secondes).
+          selector:
+            entity:
+              domain: sensor
 
-      ups_state_text:
-        name: État UPS (texte)
-        description: Entité texte décrivant l’état de l’UPS.
-        selector:
-          entity:
-            domain: sensor
+        ups_state_text:
+          name: État UPS (texte)
+          description: Entité texte décrivant l’état de l’UPS.
+          selector:
+            entity:
+              domain: sensor
 
 
     # --- Notifications ---
