@@ -127,7 +127,6 @@ variables:
   v_notif_channel: !input notif_channel
 
   # --- Configuration spécifique ---
-  v_shutdown_service: !input shutdown_service
   v_critical_pattern: !input critical_pattern
   v_critical_delay: !input critical_delay
 
@@ -227,7 +226,7 @@ action:
           - delay:
               seconds: "{{ v_critical_delay }}"
 
-          - service: v_shutdown_service
+          - service: !input shutdown_service
 
       # --- Courant rétabli ---
       - conditions:
