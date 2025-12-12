@@ -199,3 +199,49 @@ action:
               seconds: !input critical_delay
 
           - service: !input shutdown_service
+
+      # --- Courant rétabli ---
+      - conditions:
+          - condition: trigger
+            id: courant_retour
+        sequence:
+          - service: !input notify_mobile
+            data:
+              title: "🔌 Courant rétabli"
+              message: >
+                L'alimentation secteur est revenue.  
+                L'UPS fonctionne normalement.
+              sticky: true
+              channel: !input notif_channel
+              importance: high
+              priority: high
+
+      # --- Bouton "Check autonomie" ---
+      - conditions:
+          - condition: trigger
+            id: check_remaining
+        sequence:
+          - service: !input notify_mobile
+            data:
+              title: "🔍 Autonomie actuelle"
+              message: >
+                {% set s = states[v_input_ups_runtime] | int(0) %}
+                {% if s > 0 %}
+                  {% set h = s // 3600 %}
+                  {% set m = (s % 3600) // 60 %}
+                  {% set sec = s % 60 %}
+                  {% set end = (now() + timedelta(seconds=s)).strftime("%H:%M:%S") %}
+                  L'UPS est sur batterie.  
+                  **Autonomie restante : {{ "%02d:%02d:%02d"|format(h, m, sec) }}**  
+                  **Extinction estimée à : {{ end }}**
+                {% else %}
+                  **Autonomie : inconnue**
+                {% endif %}
+                **État UPS :** {{ states[v_input_ups_state_text] }}
+              sticky: true
+              channel: !input notif_channel
+              importance: high
+              priority: high
+              actions:
+                - action: FORCE_SHUTDOWN
+                  title: Forcer arrêt du homelab
