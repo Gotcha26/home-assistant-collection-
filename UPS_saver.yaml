@@ -21,7 +21,7 @@ blueprint:
         selector:
           entity:
             filter:
-              - domain: sensor
+              - filter: sensor
 
       ups_runtime:
         name: Autonomie UPS (en secondes)
@@ -29,7 +29,7 @@ blueprint:
         selector:
           entity:
             filter:
-              - domain: sensor
+              - filter: sensor
 
       ups_state_text:
         name: État UPS (texte)
@@ -37,7 +37,7 @@ blueprint:
         selector:
           entity:
             filter:
-              - domain: sensor
+              - filter: sensor
 
 
     # --- Notifications ---
