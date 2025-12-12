@@ -153,11 +153,11 @@ action:
           - condition: trigger
             id: OB_begin
         sequence:
-          - service: "{{ v_notify_mobile }}"
+          - service: !input notify_mobile
             data:
               title: "⚠️ Coupure électrique détectée"
               message: >
-                {% set s = states(v_ups_runtime) | int(0) %}
+                {% set s = states(!input ups_runtime) | int(0) %}
                 {% if s > 0 %}
                   {% set h = s // 3600 %}
                   {% set m = (s % 3600) // 60 %}
@@ -171,7 +171,7 @@ action:
                   Autonomie inconnue.
                 {% endif %}
               sticky: true
-              channel: "{{ v_notif_channel }}"
+              channel: !input notif_channel
               importance: high
               priority: high
               actions:
@@ -185,35 +185,35 @@ action:
           - condition: trigger
             id: autonomie_critique
         sequence:
-          - service: "{{ v_notify_mobile }}"
+          - service: !input notify_mobile
             data:
               title: "⛔ Arrêt automatique homelab"
               message: >
-                Batterie critique détectée (`{{ states(v_ups_state_code) }}`).  
+                Batterie critique détectée (`{{ states(!input ups_state_code) }}`).  
                 Extinction immédiate et propre du homelab.
               sticky: true
-              channel: "{{ v_notif_channel }}"
+              channel: !input notif_channel
               importance: high
               priority: high
 
           - delay:
-              seconds: "{{ v_critical_delay }}"
+              seconds: !input critical_delay
 
-          - service: "{{ v_shutdown_service }}"
+          - service: !input shutdown_service
 
       # --- Courant rétabli ---
       - conditions:
           - condition: trigger
             id: courant_retour
         sequence:
-          - service: "{{ v_notify_mobile }}"
+          - service: !input notify_mobile
             data:
               title: "🔌 Courant rétabli"
               message: >
                 L'alimentation secteur est revenue.  
                 L'UPS fonctionne normalement.
               sticky: true
-              channel: "{{ v_notif_channel }}"
+              channel: !input notif_channel
               importance: high
               priority: high
 
@@ -222,11 +222,11 @@ action:
           - condition: trigger
             id: check_remaining
         sequence:
-          - service: "{{ v_notify_mobile }}"
+          - service: !input notify_mobile
             data:
               title: "🔍 Autonomie actuelle"
               message: >
-                {% set s = states(v_ups_runtime) | int(0) %}
+                {% set s = states(!input ups_runtime) | int(0) %}
                 {% if s > 0 %}
                   {% set h = s // 3600 %}
                   {% set m = (s % 3600) // 60 %}
@@ -238,9 +238,9 @@ action:
                 {% else %}
                   **Autonomie : inconnue**
                 {% endif %}
-                **État UPS :** {{ states(v_ups_state_text) }}
+                **État UPS :** {{ states(!input ups_state_text) }}
               sticky: true
-              channel: "{{ v_notif_channel }}"
+              channel: !input notif_channel
               importance: high
               priority: high
               actions:
