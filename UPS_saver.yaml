@@ -7,8 +7,6 @@ blueprint:
   domain: automation
 
   input:
-
-    # --- Configuration UPS ---
     configuration_ups:
       name: "1 - Configuration de l'UPS"
       description: "Paramètres de votre UPS."
@@ -17,90 +15,55 @@ blueprint:
       input:
         ups_state_code:
           name: Code d’état
-          description: >
-            Entité permettant de détecter OB / OL / ALARM.<br/>
-            Défaut : "Code d'état"<br/>
-            (ex : `sensor.eaton3s_code_d_etat`)
-          default: "sensor.eaton3s_code_d_etat"
+          default: sensor.eaton3s_code_d_etat
           selector:
             entity:
               domain: sensor
-
         ups_runtime:
           name: Autonomie de la batterie
-          description: >
-            Entité définissant l’autonomie restante (en secondes).<br/>
-            Défaut : "Autonomie de la batterie"<br/>
-            (ex: `sensor.eaton3s_autonomie_de_la_batterie`)
-          default: "sensor.eaton3s_autonomie_de_la_batterie"
+          default: sensor.eaton3s_autonomie_de_la_batterie
           selector:
             entity:
               domain: sensor
-
         ups_state_text:
           name: État
-          description: >
-            Entité texte décrivant l’état de l’UPS.<br/>
-            Défaut : "État"<br/>
-            (ex : `sensor.eaton3s_etat`)
-          default: "sensor.eaton3s_etat"
+          default: sensor.eaton3s_etat
           selector:
             entity:
               domain: sensor
 
-
-    # --- Notifications ---
     configuration_notifications:
       name: "2 - Configuration notifications App Compagnon"
-      description: "Service de notification via l'application mobile Compagnon."
       icon: mdi:checkbox-blank-badge
       collapsed: true
       input:
         notify_mobile:
-          name: "Service de notification mobile"
-          description: >
-            Service utilisé pour la notification.<br/>
-            (ex :  `notify.mobile_app_sm_s928b`)
-          default: "notify.mobile_app_sm_s928b"
+          name: Service de notification mobile
+          default: notify.mobile_app_sm_s928b
           selector:
             text:
-
         notif_channel:
           name: Canal Android (optionnel)
-          description: "Canal de notification préféré. Il faut créer en amont le canal s'il est nouveau !"
-          default: "UPS_channel"
+          default: UPS_channel
           selector:
             text:
 
-    # --- Configuration élaborée ---
     configuration_shell:
       name: "3 - Configuration spécifique"
-      description: "Configuration des actions spécifiques."
-      icon: mdi:wrench-clock
       collapsed: true
       input:
         shutdown_service:
-          name: "Service d’arrêt du homelab"
-          description: >
-            Service (shell_command, script, etc.) déclenchant l’arrêt Proxmox.<br/>
-            (ex : `shell_command.create_shutdown_file`)
-          default: "shell_command.create_shutdown_file"
+          name: Service d’arrêt du homelab
+          default: shell_command.create_shutdown_file
           selector:
             text:
-
         critical_pattern:
           name: Codes d’état batterie critique
-          description: >
-            Texte exact de l'entité lors du passage en alarme.<br/>
-            Par défaut : "ALARM OB OL"<br/>
-            **Ne modifiez pas ce champ sauf exception !**
           default: "ALARM OB OL"
           selector:
             text:
-
         critical_delay:
           name: Durée avant arrêt critique (secondes)
-          description: "Après le déclenchement de l'alarme au niveau bas (20%), délai supplémentaire avant le déclenchement de la phase critique."
           default: 30
           selector:
             number:
@@ -110,34 +73,6 @@ blueprint:
               mode: slider
 
 mode: single
-
-
-# ======================================================
-# ===                 AUTOMATION                     ===
-# ======================================================
-
-variables:
-
-  # --- Configuration UPS ---
-  v_ups_runtime: !input ups_runtime
-  v_ups_state_code: !input ups_state_code
-  v_ups_state_text: !input ups_state_text
-
-  # --- Configuration spécifique ---
-  v_critical_delay: !input critical_delay
-
-  # fallback
-  critical_pattern: >
-    {% if inputs.critical_pattern | trim == "" %}
-      ALARM OB OL
-    {% else %}
-      {{ inputs.critical_pattern }}
-    {% endif %}
-
-
-# ======================================================
-# ===                 TRIGGERS                       ===
-# ======================================================
 
 trigger:
   - id: OB_begin
@@ -150,7 +85,8 @@ trigger:
     platform: state
     entity_id: !input ups_state_code
     to: !input critical_pattern
-    for: "{{ !input critical_delay | int }} seconds"
+    for:
+      seconds: !input critical_delay
 
   - id: courant_retour
     platform: state
@@ -163,15 +99,8 @@ trigger:
     event_data:
       action: CHECK_REMAINING
 
-
-# ======================================================
-# ===                 ACTIONS                        ===
-# ======================================================
-
 action:
   - choose:
-
-      # --- Coupure secteur ---
       - conditions:
           - condition: trigger
             id: OB_begin
@@ -180,7 +109,7 @@ action:
             data:
               title: "⚠️ Coupure électrique détectée"
               message: >-
-                {% set s = states('' + !input ups_runtime + '') | int(0) %}
+                {% set s = states(!input ups_runtime) | int(0) %}
                 {% if s > 0 %}
                   {% set h = s // 3600 %}
                   {% set m = (s % 3600) // 60 %}
@@ -188,13 +117,13 @@ action:
                   {% set end = (now() + timedelta(seconds=s)).strftime("%H:%M:%S") %}
                   L'UPS est sur batterie depuis plus de 30 secondes.  
                   **Autonomie restante : {{ "%02d:%02d:%02d" | format(h, m, sec) }}**  
-                  **Extinction estimée à : {{ end }}**
+                  **Extinction estimée : {{ end }}**
                 {% else %}
                   L'UPS est sur batterie depuis plus de 30 secondes.  
                   Autonomie inconnue.
                 {% endif %}
               sticky: true
-              channel: UPS Alerts
+              channel: !input notif_channel
               importance: high
               priority: high
               actions:
@@ -203,7 +132,6 @@ action:
                 - action: FORCE_SHUTDOWN
                   title: Forcer arrêt du homelab
 
-      # --- Autonomie critique ---
       - conditions:
           - condition: trigger
             id: autonomie_critique
@@ -212,19 +140,16 @@ action:
             data:
               title: "⛔ Arrêt automatique homelab"
               message: >-
-                Batterie critique détectée (`{{ states('' + !input ups_state_code + '') }}`).  
+                Batterie critique détectée (`{{ states(!input ups_state_code) }}`).  
                 Extinction immédiate et propre du homelab.
               sticky: true
-              channel: UPS Alerts
+              channel: !input notif_channel
               importance: high
               priority: high
-
           - delay:
-              seconds: "{{'' + !input critical_delay + ''}}"
-
+              seconds: !input critical_delay
           - service: !input shutdown_service
 
-      # --- Courant rétabli ---
       - conditions:
           - condition: trigger
             id: courant_retour
@@ -236,11 +161,10 @@ action:
                 L'alimentation secteur est revenue.  
                 L'UPS fonctionne normalement.
               sticky: true
-              channel: UPS Alerts
+              channel: !input notif_channel
               importance: high
               priority: high
 
-      # --- Bouton "Check autonomie" ---
       - conditions:
           - condition: trigger
             id: check_remaining
@@ -249,7 +173,7 @@ action:
             data:
               title: "🔍 Autonomie actuelle"
               message: >-
-                {% set s = states('' + !input ups_runtime + '') | int(0) %}
+                {% set s = states(!input ups_runtime) | int(0) %}
                 {% if s > 0 %}
                   {% set h = s // 3600 %}
                   {% set m = (s % 3600) // 60 %}
@@ -261,9 +185,9 @@ action:
                 {% else %}
                   **Autonomie : inconnue**
                 {% endif %}
-                **État UPS :** {{ states('' + !input ups_state_text + '') }}
+                **État UPS :** {{ states(!input ups_state_text) }}
               sticky: true
-              channel: UPS Alerts
+              channel: !input notif_channel
               importance: high
               priority: high
               actions:
