@@ -18,31 +18,14 @@ blueprint:
         ups_reference:
           name: Entité de référence UPS
           description: >
-            Sélectionnez n'importe quelle entité du même ensemble UPS
+            Sélectionnez n'importe quelle entité du même ensemble UPS<br/>
             (ex : `sensor.eaton3s_type_d_ups`).
           selector:
             entity:
               filter:
                 - domain: sensor
 
-        critical_pattern:
-          name: Codes d’état batterie critique
-          description: >
-            Texte exact de l'entité lors du passage en alarme.  
-            Par défaut : "ALARM OB OL"
-          default: "ALARM OB OL"
-          selector:
-            text:
 
-        critical_delay:
-          name: Durée avant arrêt critique (secondes)
-          default: 30
-          selector:
-            number:
-              min: 5
-              max: 600
-              unit_of_measurement: sec
-              mode: slider
 
     configuration_notifications:
       name: "2 - Configuration notifications App Compagnon"
@@ -54,8 +37,8 @@ blueprint:
         notify_mobile:
           name: "Service de notification mobile"
           description: >
-            Service utilisé pour la notification.  
-            Exemple : "notify.mobile_app_sm_s928b"
+            Service utilisé pour la notification.<br/>
+            (ex :  `notify.mobile_app_sm_s928b`)
           selector:
             text:
 
@@ -71,6 +54,26 @@ blueprint:
           description: "Service (shell_command, script, etc.) déclenchant l’arrêt Proxmox."
           selector:
             action:
+
+        critical_pattern:
+          name: Codes d’état batterie critique
+          description: >
+            Texte exact de l'entité lors du passage en alarme.<br/>
+            Par défaut : "ALARM OB OL"
+          default: "ALARM OB OL"
+          selector:
+            text:
+
+        critical_delay:
+          name: Durée avant arrêt critique (secondes)
+          description: "Après le déclenchement de l'alarme au niveau bas (20%), délai supplémentaire avant le déclenchement de la phase critique."
+          default: 30
+          selector:
+            number:
+              min: 5
+              max: 600
+              unit_of_measurement: sec
+              mode: slider
 
 mode: single
 
