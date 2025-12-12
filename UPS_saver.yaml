@@ -65,8 +65,7 @@ blueprint:
             (ex : `shell_command.create_shutdown_file`)
           selector:
             text:
-              pattern: '^[a-z_]+\.[a-z_]+$'
-
+            
         critical_pattern:
           name: Codes d’état batterie critique
           description: >
