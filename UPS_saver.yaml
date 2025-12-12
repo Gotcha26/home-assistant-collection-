@@ -54,7 +54,7 @@ blueprint:
         notify_mobile:
           name: "Service de notification mobile"
           description: >
-            Service utilisé pour la notification.<br/>
+            Service utilisé pour la notification.  
             Exemple : "notify.mobile_app_sm_s928b"
           selector:
             text:
