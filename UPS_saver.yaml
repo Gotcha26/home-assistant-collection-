@@ -16,31 +16,34 @@ blueprint:
       collapsed: false
       input:
         ups_state_code:
-          name: État UPS (code d’état)
+          name: Code d’état
           description: >
             Entité permettant de détecter OB / OL / ALARM.<br/>
             Défaut : "Code d'état"<br/>
             (ex : `sensor.eaton3s_code_d_etat`)
+          default: "sensor.eaton3s_code_d_etat"
           selector:
             entity:
               domain: sensor
 
         ups_runtime:
-          name: Autonomie UPS (en secondes)
+          name: Autonomie de la batterie
           description: >
             Entité définissant l’autonomie restante (en secondes).<br/>
             Défaut : "Autonomie de la batterie"<br/>
             (ex: `sensor.eaton3s_autonomie_de_la_batterie`)
+          default: "sensor.eaton3s_autonomie_de_la_batterie"
           selector:
             entity:
               domain: sensor
 
         ups_state_text:
-          name: État UPS (texte)
+          name: État
           description: >
             Entité texte décrivant l’état de l’UPS.<br/>
             Défaut : "État"<br/>
             (ex : `sensor.eaton3s_etat`)
+          default: "sensor.eaton3s_etat"
           selector:
             entity:
               domain: sensor
@@ -58,6 +61,7 @@ blueprint:
           description: >
             Service utilisé pour la notification.<br/>
             (ex :  `notify.mobile_app_sm_s928b`)
+          default: "notify.mobile_app_sm_s928b"
           selector:
             text:
 
@@ -80,6 +84,7 @@ blueprint:
           description: >
             Service (shell_command, script, etc.) déclenchant l’arrêt Proxmox.<br/>
             (ex : `shell_command.create_shutdown_file`)
+          default: "shell_command.create_shutdown_file"
           selector:
             text:
 
