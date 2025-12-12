@@ -67,8 +67,8 @@ blueprint:
       input:
 
         shutdown_service:
-          name: Service d’arrêt du homelab
-          description: Service (shell_command, script, etc.) déclenchant l’arrêt Proxmox.
+          name: "Service d’arrêt du homelab"
+          description: "Service (shell_command, script, etc.) déclenchant l’arrêt Proxmox.""
           selector:
             action:
 
