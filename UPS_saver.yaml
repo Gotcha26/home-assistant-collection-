@@ -155,9 +155,9 @@ action:
             id: OB_begin
         sequence:
           - service: !input notify_mobile
-            data_template:
+            data:
               title: "⚠️ Coupure électrique détectée"
-              message: >-
+              message: >
                 {% set s = states(!input ups_runtime) | int(0) %}
                 {% if s > 0 %}
                   {% set h = s // 3600 %}
@@ -187,9 +187,9 @@ action:
             id: autonomie_critique
         sequence:
           - service: !input notify_mobile
-            data_template:
+            data:
               title: "⛔ Arrêt automatique homelab"
-              message: >-
+              message: >
                 Batterie critique détectée (`{{ states(!input ups_state_code) }}`).  
                 Extinction immédiate et propre du homelab.
               sticky: true
@@ -208,7 +208,7 @@ action:
             id: courant_retour
         sequence:
           - service: !input notify_mobile
-            data_template:
+            data:
               title: "🔌 Courant rétabli"
               message: >
                 L'alimentation secteur est revenue.  
@@ -224,9 +224,9 @@ action:
             id: check_remaining
         sequence:
           - service: !input notify_mobile
-            data_template:
+            data:
               title: "🔍 Autonomie actuelle"
-              message: >-
+              message: >
                 {% set s = states(!input ups_runtime) | int(0) %}
                 {% if s > 0 %}
                   {% set h = s // 3600 %}
