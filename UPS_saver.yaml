@@ -41,7 +41,7 @@ blueprint:
             Service utilisé pour la notification.<br/>
             (ex :  `notify.mobile_app_sm_s928b`)
           selector:
-            text:
+            action:
 
         notif_channel:
           name: Canal Android (optionnel)
@@ -62,9 +62,9 @@ blueprint:
           name: "Service d’arrêt du homelab"
           description: >
             Service (shell_command, script, etc.) déclenchant l’arrêt Proxmox.<br/>
-            (ex : `shell_command_create_shutdown_file`)
+            (ex : `shell_command.create_shutdown_file`)
           selector:
-            text:
+            action:
 
         critical_pattern:
           name: Codes d’état batterie critique
