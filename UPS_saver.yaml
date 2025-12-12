@@ -110,16 +110,6 @@ blueprint:
 
 mode: single
 
-variables:
-  v_ups_runtime: !input ups_runtime
-  v_ups_state_code: !input ups_state_code
-  v_ups_state_text: !input ups_state_text
-  v_notify_mobile: !input notify_mobile
-  v_notif_channel: !input notif_channel
-  v_shutdown_service: !input shutdown_service
-  v_critical_pattern: !input critical_pattern
-  v_critical_delay: !input critical_delay
-
 trigger:
   - id: OB_begin
     platform: state
@@ -156,8 +146,9 @@ action:
           - service: !input notify_mobile
             data:
               title: "⚠️ Coupure électrique détectée"
-              message: >
-                {% set s = states('' + !input ups_runtime + '') | int(0) %}
+              message: >-
+                {% set runtime_entity = !input ups_runtime %}
+                {% set s = states(runtime_entity) | int(0) %}
                 {% if s > 0 %}
                   {% set h = s // 3600 %}
                   {% set m = (s % 3600) // 60 %}
@@ -188,8 +179,9 @@ action:
           - service: !input notify_mobile
             data:
               title: "⛔ Arrêt automatique homelab"
-              message: >
-                Batterie critique détectée (`{{ states('' + !input ups_state_code + '') }}`).  
+              message: >-
+                {% set state_code_entity = !input ups_state_code %}
+                Batterie critique détectée (`{{ states(state_code_entity) }}`).  
                 Extinction immédiate et propre du homelab.
               sticky: true
               channel: !input notif_channel
@@ -209,7 +201,7 @@ action:
           - service: !input notify_mobile
             data:
               title: "🔌 Courant rétabli"
-              message: >
+              message: >-
                 L'alimentation secteur est revenue.  
                 L'UPS fonctionne normalement.
               sticky: true
@@ -225,8 +217,10 @@ action:
           - service: !input notify_mobile
             data:
               title: "🔍 Autonomie actuelle"
-              message: >
-                {% set s = states('' + !input ups_runtime + '') | int(0) %}
+              message: >-
+                {% set runtime_entity = !input ups_runtime %}
+                {% set state_text_entity = !input ups_state_text %}
+                {% set s = states(runtime_entity) | int(0) %}
                 {% if s > 0 %}
                   {% set h = s // 3600 %}
                   {% set m = (s % 3600) // 60 %}
@@ -238,7 +232,7 @@ action:
                 {% else %}
                   **Autonomie : inconnue**
                 {% endif %}
-                **État UPS :** {{ states('' + !input ups_state_text + '') }}
+                **État UPS :** {{ states(state_text_entity) }}
               sticky: true
               channel: !input notif_channel
               importance: high
