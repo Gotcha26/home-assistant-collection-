@@ -41,7 +41,7 @@ blueprint:
             Service utilisé pour la notification.<br/>
             (ex :  `notify.mobile_app_sm_s928b`)
           selector:
-            text:
+            action:
 
         notif_channel:
           name: Canal Android (optionnel)
