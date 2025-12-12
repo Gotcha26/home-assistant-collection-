@@ -16,15 +16,29 @@ blueprint:
       collapsed: false
       input:
 
-        ups_reference:
-          name: Entité de référence UPS
-          description: >
-            Sélectionnez n'importe quelle entité du même ensemble UPS<br/>
-            (ex : `sensor.eaton3s_type_d_ups`).
-          selector:
-            entity:
-              filter:
-                - domain: sensor
+        ups_state_code:
+        name: État UPS (code d’état)
+        description: Entité permettant de détecter OB / OL / ALARM.
+        selector:
+          entity:
+            filter:
+              - domain: sensor
+
+      ups_runtime:
+        name: Autonomie UPS (en secondes)
+        description: Entité définissant l’autonomie restante (en secondes).
+        selector:
+          entity:
+            filter:
+              - domain: sensor
+
+      ups_state_text:
+        name: État UPS (texte)
+        description: Entité texte décrivant l’état de l’UPS.
+        selector:
+          entity:
+            filter:
+              - domain: sensor
 
 
     # --- Notifications ---
@@ -65,7 +79,7 @@ blueprint:
             (ex : `shell_command.create_shutdown_file`)
           selector:
             text:
-            
+
         critical_pattern:
           name: Codes d’état batterie critique
           description: >
@@ -96,16 +110,6 @@ mode: single
 
 variables:
 
-  # Extraction automatique du préfixe UPS
-  ups_base: >
-    {% set ref = inputs.ups_reference %}
-    {% set parts = ref.split('_') %}
-    {{ parts[0] ~ "_" ~ parts[1] }}
-
-  ups_code: "{{ ups_base ~ '_code_d_etat' }}"
-  ups_runtime: "{{ ups_base ~ '_autonomie_de_la_batterie' }}"
-  ups_human: "{{ ups_base ~ '_etat' }}"
-
   # fallback
   critical_pattern: >
     {% if inputs.critical_pattern | trim == "" %}
@@ -122,20 +126,20 @@ variables:
 trigger:
   - id: OB_begin
     platform: state
-    entity_id: "{{ ups_code }}"
+    entity_id: !input ups_state_code
     to: "OB"
     for: "00:00:05"
 
   - id: autonomie_critique
     platform: state
-    entity_id: "{{ ups_code }}"
+    entity_id: !input ups_state_code
     to: !input critical_pattern
     for:
       seconds: !input critical_delay
 
   - id: courant_retour
     platform: state
-    entity_id: "{{ ups_code }}"
+    entity_id: !input ups_state_code
     to: "OL"
 
   - id: check_remaining
@@ -161,7 +165,7 @@ action:
             data:
               title: "⚠️ Coupure électrique détectée"
               message: >-
-                {% set s = states(ups_runtime) | int(0) %}
+                {% set s = states(blueprint.inputs.ups_runtime) | int(0) %}
                 {% if s > 0 %}
                   {% set h = s // 3600 %}
                   {% set m = (s % 3600) // 60 %}
@@ -194,7 +198,7 @@ action:
             data:
               title: "⛔ Arrêt automatique homelab"
               message: >-
-                Batterie critique détectée (`{{ states(ups_code) }}`).  
+                Batterie critique détectée (`{{ states(blueprint.inputs.ups_state_code) }}`).  
                 Extinction immédiate et propre du homelab.
               data:
                 sticky: true
@@ -233,7 +237,7 @@ action:
             data:
               title: "🔍 Autonomie actuelle"
               message: >-
-                {% set s = states(ups_runtime) | int(0) %}
+                {% set s = states(blueprint.inputs.ups_runtime) | int(0) %}
                 {% if s > 0 %}
                   {% set h = s // 3600 %}
                   {% set m = (s % 3600) // 60 %}
@@ -245,7 +249,7 @@ action:
                 {% else %}
                   **Autonomie : inconnue**
                 {% endif %}
-                **État UPS :** {{ states(ups_human) }}
+                **État UPS :** {{ states(blueprint.inputs.ups_state_text) }}
               data:
                 sticky: true
                 channel: UPS Alerts
