@@ -178,3 +178,24 @@ action:
                   title: Vérifier autonomie
                 - action: FORCE_SHUTDOWN
                   title: Forcer arrêt du homelab
+
+      # --- Autonomie critique ---
+      - conditions:
+          - condition: trigger
+            id: autonomie_critique
+        sequence:
+          - service: !input notify_mobile
+            data:
+              title: "⛔ Arrêt automatique homelab"
+              message: >-
+                Batterie critique détectée (`{{ states(v_input_ups_state_code) }}`).  
+                Extinction immédiate et propre du homelab.
+              sticky: true
+              channel: !input notif_channel
+              importance: high
+              priority: high
+
+          - delay:
+              seconds: !input critical_delay
+
+          - service: !input shutdown_service
