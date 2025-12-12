@@ -13,9 +13,9 @@ blueprint:
       collapsed: false
       input:
 
-        ups_state:
-          name: État UPS (code d’état)
-          description: Entité permettant de détecter OB / OL / ALARM.
+        ups_base:
+          name: "Entité de base UPS"
+          description: "Exemple : sensor.eaton3s"
           selector:
             entity:
               filter:
@@ -80,20 +80,20 @@ mode: single
 trigger:
   - id: coupure_30s
     platform: state
-    entity_id: !input ups_state
+    entity_id: "{{ blueprint.inputs.ups_base }}_code_d_etat"
     to: "OB"
     for: "00:00:05"
 
   - id: autonomie_critique
     platform: state
-    entity_id: !input ups_state
+    entity_id: "{{ blueprint.inputs.ups_base }}_code_d_etat"
     to: !input critical_pattern
     for:
       seconds: !input critical_delay
 
   - id: courant_retour
     platform: state
-    entity_id: !input ups_state
+    entity_id: "{{ blueprint.inputs.ups_base }}_code_d_etat"
     to: "OL"
 
   - id: check_remaining
@@ -147,7 +147,7 @@ action:
             data:
               title: ⛔ Arrêt automatique homelab
               message: >-
-                Niveau batterie critique détecté (`{{ states(blueprint.inputs.ups_state) }}`).  
+                Niveau batterie critique détecté (`{{ states(blueprint.inputs.ups_base ~ "_code_d_etat") }}`).  
                 Extinction immédiate et propre du homelab.
               data:
                 sticky: true
