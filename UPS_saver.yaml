@@ -39,7 +39,8 @@ blueprint:
 
       critical_pattern:
         name: Codes d’état batterie critique
-        description: 'Ex : "ALARM OB OL"'
+        description: >
+          Ex : "ALARM OB OL"
         default: "ALARM OB OL"
         selector:
           text:
