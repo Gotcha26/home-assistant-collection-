@@ -70,7 +70,8 @@ blueprint:
           name: Codes d’état batterie critique
           description: >
             Texte exact de l'entité lors du passage en alarme.<br/>
-            Par défaut : "ALARM OB OL"
+            Par défaut : "ALARM OB OL"<br/<
+            **Ne modifiez pas ce champ sauf exception !**
           default: "ALARM OB OL"
           selector:
             text:
@@ -104,6 +105,14 @@ variables:
   ups_code: "{{ ups_base ~ '_code_d_etat' }}"
   ups_runtime: "{{ ups_base ~ '_autonomie_de_la_batterie' }}"
   ups_human: "{{ ups_base ~ '_etat' }}"
+
+  # fallback
+  critical_pattern: >
+    {% if inputs.critical_pattern | trim == "" %}
+      ALARM OB OL
+    {% else %}
+      {{ inputs.critical_pattern }}
+    {% endif %}
 
 
 # ======================================================
