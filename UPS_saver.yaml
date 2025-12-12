@@ -144,7 +144,7 @@ action:
             id: OB_begin
         sequence:
           - service: !input notify_mobile
-            data:
+            data_template:
               title: "⚠️ Coupure électrique détectée"
               message: >-
                 {% set runtime_entity = !input ups_runtime %}
@@ -177,7 +177,7 @@ action:
             id: autonomie_critique
         sequence:
           - service: !input notify_mobile
-            data:
+            data_template:
               title: "⛔ Arrêt automatique homelab"
               message: >-
                 {% set state_code_entity = !input ups_state_code %}
@@ -215,7 +215,7 @@ action:
             id: check_remaining
         sequence:
           - service: !input notify_mobile
-            data:
+            data_template:
               title: "🔍 Autonomie actuelle"
               message: >-
                 {% set runtime_entity = !input ups_runtime %}
