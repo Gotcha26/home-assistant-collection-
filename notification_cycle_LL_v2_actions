@@ -1,0 +1,179 @@
+blueprint:
+  name: "Lave-linge — Actions notifications (compagnon)"
+  description: |
+    **Automatisation compagnon** pour le blueprint "Cycle Lave-linge"
+    
+    Gère les boutons d'action des notifications :
+    - **📋 Voir détails** : Affiche toutes les conditions météo et conseils
+    - **✅ Linge étendu** : Confirme et ferme la notification
+    
+    ⚠️ **Important** : Cette automatisation doit être créée EN PLUS du blueprint principal.
+  domain: automation
+  author: "Gotcha26 & Claude"
+  
+  input:
+    notify_service:
+      name: "Service de notification"
+      description: "Même service que dans le blueprint principal"
+      default: "notify.mobile_app_sm_s928b"
+      selector:
+        text:
+          multiline: false
+
+    temp_ext_sensor:
+      name: "Température extérieure"
+      description: "Même capteur que le blueprint principal"
+      selector:
+        entity:
+          domain: sensor
+          device_class: temperature
+
+    humidity_ext_sensor:
+      name: "Humidité extérieure"
+      selector:
+        entity:
+          domain: sensor
+          device_class: humidity
+
+    wind_sensor:
+      name: "Vitesse du vent"
+      selector:
+        entity:
+          domain: sensor
+
+    cloud_sensor:
+      name: "Couverture nuageuse"
+      selector:
+        entity:
+          domain: sensor
+
+    uv_sensor:
+      name: "Indice UV"
+      selector:
+        entity:
+          domain: sensor
+
+    rain_chance_sensor:
+      name: "Risque de pluie"
+      selector:
+        entity:
+          domain: sensor
+
+    temp_int_sensor:
+      name: "Température intérieure"
+      selector:
+        entity:
+          domain: sensor
+          device_class: temperature
+
+    humidity_int_sensor:
+      name: "Humidité intérieure"
+      selector:
+        entity:
+          domain: sensor
+          device_class: humidity
+
+variables:
+  notify_service: !input notify_service
+  temp_ext_sensor: !input temp_ext_sensor
+  humidity_ext_sensor: !input humidity_ext_sensor
+  wind_sensor: !input wind_sensor
+  cloud_sensor: !input cloud_sensor
+  uv_sensor: !input uv_sensor
+  rain_chance_sensor: !input rain_chance_sensor
+  temp_int_sensor: !input temp_int_sensor
+  humidity_int_sensor: !input humidity_int_sensor
+
+trigger:
+  - platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: "DETAILS_SECHAGE"
+    id: "details"
+
+  - platform: event
+    event_type: mobile_app_notification_action
+    event_data:
+      action: "LINGE_ETENDU"
+    id: "confirme"
+
+condition: []
+
+action:
+  - choose:
+      # ─────────────────────────────────────────────────────────────────
+      # AFFICHER LES DÉTAILS
+      # ─────────────────────────────────────────────────────────────────
+      - alias: "Afficher détails séchage"
+        conditions:
+          - condition: trigger
+            id: "details"
+        sequence:
+          - variables:
+              t_ext: "{{ states(temp_ext_sensor) | float(0) }}"
+              h_ext: "{{ states(humidity_ext_sensor) | float(100) }}"
+              v_wind: "{{ states(wind_sensor) | float(0) }}"
+              c_cloud: "{{ states(cloud_sensor) | float(100) }}"
+              i_uv: "{{ states(uv_sensor) | float(0) }}"
+              r_rain: "{{ states(rain_chance_sensor) | float(100) }}"
+              t_int: "{{ states(temp_int_sensor) | float(20) }}"
+              h_int: "{{ states(humidity_int_sensor) | float(50) }}"
+
+          - service: "{{ notify_service }}"
+            data:
+              title: "📊 Détails conditions de séchage"
+              message: |
+                ☀️ CONDITIONS EXTÉRIEURES
+                • Température : {{ t_ext }}°C
+                • Humidité : {{ h_ext }}%
+                • Vent : {{ v_wind }} km/h
+                • Nuages : {{ c_cloud }}%
+                • UV : {{ i_uv }}
+                • Risque pluie : {{ r_rain }}%
+
+                🏠 CONDITIONS INTÉRIEURES
+                • Température : {{ t_int }}°C
+                • Humidité : {{ h_int }}%
+
+                💡 CONSEILS
+                {% if r_rain > 30 %}⚠️ Pluie possible, privilégie l'intérieur
+                {% elif h_ext > 75 %}💧 Humidité extérieure élevée, séchage lent dehors
+                {% elif t_ext < 10 %}❄️ Température fraîche, séchage lent
+                {% elif v_wind > 10 and h_ext < 70 %}💨 Conditions idéales avec le vent !
+                {% elif i_uv >= 3 %}☀️ Bon ensoleillement pour sécher
+                {% elif h_int > 70 %}💧 Pièce humide, aère si tu étends dedans
+                {% else %}🌤️ Conditions moyennes{% endif %}
+              data:
+                channel: "lavelinge_notification"
+                importance: default
+                ttl: 0
+                priority: high
+                tag: "lavelinge_details"
+
+      # ─────────────────────────────────────────────────────────────────
+      # CONFIRMER LINGE ÉTENDU
+      # ─────────────────────────────────────────────────────────────────
+      - alias: "Confirmer linge étendu"
+        conditions:
+          - condition: trigger
+            id: "confirme"
+        sequence:
+          # Effacer la notification de fin
+          - service: "{{ notify_service }}"
+            data:
+              message: "clear_notification"
+              data:
+                tag: "lavelinge_fin"
+
+          # Confirmation
+          - service: "{{ notify_service }}"
+            data:
+              title: "✅ Parfait !"
+              message: "Linge étendu confirmé. Bon séchage !"
+              data:
+                channel: "silent_channel"
+                importance: low
+                timeout: 10
+                tag: "lavelinge_confirm"
+
+mode: single
