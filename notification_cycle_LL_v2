@@ -1,0 +1,588 @@
+blueprint:
+  name: "Cycle Lave-linge — Notifications + Verdict Séchage v2"
+  description: |
+    **Automatisation intelligente pour lave-linge** 🧺
+
+    ### Fonctionnalités principales
+    - ✅ Détection fiable du début et fin de cycle (anti-rebond calibré)
+    - ✅ Calcul de la durée réelle du cycle
+    - ✅ Score de séchage comparant **extérieur vs intérieur**
+    - ✅ Verdict clair : étendre dehors ou dedans ?
+    - ✅ Notifications actionnables (voir détails, confirmer)
+    - ✅ Protection anti-faux positifs (durée minimale)
+    - ✅ Seuils entièrement personnalisables
+
+    ### Pré-requis
+    1. **Prise connectée** avec mesure de puissance sur le lave-linge
+    2. **Capteurs météo** (Météo-France ou autre intégration)
+    3. **Capteur intérieur** température/humidité (optionnel mais recommandé)
+    4. **Application Companion** pour les notifications
+
+    ### Helpers à créer
+    - `input_boolean` : suivi du cycle en cours
+    - `input_datetime` : horodatage du début de cycle
+
+    _Basé sur données réelles de consommation. Seuils optimisés pour fiabilité maximale._
+  domain: automation
+  author: "Gotcha26 & Claude"
+  source_url: "https://github.com/Gotcha26/home-assistant-collection-/blob/main/notification_cycle_LL.yaml"
+  
+  input:
+    # ═══════════════════════════════════════════════════════════════════
+    # SECTION 1 : DÉTECTION DU CYCLE
+    # ═══════════════════════════════════════════════════════════════════
+    section_detection:
+      name: "⚡ 1. Détection du cycle"
+      description: "Configuration de la détection de début et fin de cycle"
+      icon: "mdi:washing-machine"
+      collapsed: false
+      input:
+        power_sensor:
+          name: "Capteur de puissance"
+          description: "Capteur de puissance (W) de la prise connectée au lave-linge"
+          selector:
+            entity:
+              domain: sensor
+              device_class: power
+              multiple: false
+
+        start_threshold:
+          name: "Seuil de démarrage (W)"
+          description: |
+            Puissance au-dessus de laquelle un cycle est considéré comme démarré.
+            _Recommandé : 8W (basé sur données réelles)_
+          default: 8
+          selector:
+            number:
+              min: 1
+              max: 50
+              step: 1
+              unit_of_measurement: "W"
+              mode: slider
+
+        start_duration:
+          name: "Durée anti-rebond démarrage"
+          description: |
+            Temps durant lequel la puissance doit rester au-dessus du seuil.
+            Évite les faux démarrages sur les pics courts.
+          default:
+            seconds: 25
+          selector:
+            duration:
+
+        stop_threshold:
+          name: "Seuil de fin de cycle (W)"
+          description: |
+            Puissance en dessous de laquelle le cycle est considéré terminé.
+            _Recommandé : 5W (veille de la machine)_
+          default: 5
+          selector:
+            number:
+              min: 0
+              max: 10
+              step: 1
+              unit_of_measurement: "W"
+              mode: slider
+
+        stop_duration:
+          name: "Durée anti-rebond fin"
+          description: |
+            Temps durant lequel la puissance doit rester sous le seuil.
+            _Recommandé : 2 min (les pauses entre phases peuvent durer >1 min)_
+          default:
+            minutes: 2
+          selector:
+            duration:
+
+        min_cycle_duration:
+          name: "Durée minimale du cycle (minutes)"
+          description: |
+            Le cycle doit avoir duré au moins X minutes avant de notifier la fin.
+            Évite les fausses fins sur arrêt/reprise rapide.
+            _Recommandé : 60 min_
+          default: 60
+          selector:
+            number:
+              min: 0
+              max: 180
+              step: 5
+              unit_of_measurement: "min"
+              mode: slider
+
+    # ═══════════════════════════════════════════════════════════════════
+    # SECTION 2 : HELPERS (ENTITÉS DE SUIVI)
+    # ═══════════════════════════════════════════════════════════════════
+    section_helpers:
+      name: "🔧 2. Helpers (suivi du cycle)"
+      description: "Entités pour mémoriser l'état du cycle"
+      icon: "mdi:toggle-switch"
+      collapsed: false
+      input:
+        cycle_flag:
+          name: "Booléen de suivi"
+          description: |
+            Helper `input_boolean` pour suivre si un cycle est en cours.
+            
+            **Créer si inexistant** : Paramètres → Appareils & Services → Entrées → Créer une entrée → Interrupteur
+            - Nom : `Cycle LL en cours`
+            - Icône : `mdi:washing-machine`
+          selector:
+            entity:
+              domain: input_boolean
+              multiple: false
+
+        cycle_start_time:
+          name: "Horodatage début de cycle"
+          description: |
+            Helper `input_datetime` pour stocker l'heure de démarrage.
+            
+            **Créer si inexistant** : Paramètres → Entrées → Créer → Date et/ou heure
+            - Nom : `Début cycle lave-linge`
+            - Cocher : Date ET Heure
+            - Icône : `mdi:clock-start`
+          selector:
+            entity:
+              domain: input_datetime
+              multiple: false
+
+    # ═══════════════════════════════════════════════════════════════════
+    # SECTION 3 : CAPTEURS MÉTÉO (EXTÉRIEUR)
+    # ═══════════════════════════════════════════════════════════════════
+    section_meteo:
+      name: "☀️ 3. Conditions extérieures"
+      description: "Capteurs météorologiques pour évaluer le séchage dehors"
+      icon: "mdi:weather-sunny"
+      collapsed: true
+      input:
+        temp_ext_sensor:
+          name: "Température extérieure"
+          description: "Capteur de température (physique ou service météo)"
+          selector:
+            entity:
+              domain: sensor
+              device_class: temperature
+              multiple: false
+
+        humidity_ext_sensor:
+          name: "Humidité extérieure"
+          description: "Capteur d'humidité relative"
+          selector:
+            entity:
+              domain: sensor
+              device_class: humidity
+              multiple: false
+
+        wind_sensor:
+          name: "Vitesse du vent"
+          description: "Capteur de vitesse du vent (km/h)"
+          selector:
+            entity:
+              domain: sensor
+              multiple: false
+
+        cloud_sensor:
+          name: "Couverture nuageuse"
+          description: "Capteur de nébulosité (%)"
+          selector:
+            entity:
+              domain: sensor
+              multiple: false
+
+        uv_sensor:
+          name: "Indice UV"
+          description: "Capteur d'indice UV"
+          selector:
+            entity:
+              domain: sensor
+              multiple: false
+
+        rain_chance_sensor:
+          name: "Risque de pluie"
+          description: |
+            Capteur de probabilité de pluie (%).
+            **Important** : Si >50%, le verdict sera automatiquement "intérieur".
+          selector:
+            entity:
+              domain: sensor
+              multiple: false
+
+    # ═══════════════════════════════════════════════════════════════════
+    # SECTION 4 : CAPTEURS INTÉRIEURS
+    # ═══════════════════════════════════════════════════════════════════
+    section_interieur:
+      name: "🏠 4. Conditions intérieures"
+      description: "Capteurs de la pièce d'étendage (salle de bain, buanderie...)"
+      icon: "mdi:home-thermometer"
+      collapsed: true
+      input:
+        temp_int_sensor:
+          name: "Température intérieure"
+          description: "Capteur de température de la pièce où vous étendez le linge"
+          selector:
+            entity:
+              domain: sensor
+              device_class: temperature
+              multiple: false
+
+        humidity_int_sensor:
+          name: "Humidité intérieure"
+          description: "Capteur d'humidité de la pièce d'étendage"
+          selector:
+            entity:
+              domain: sensor
+              device_class: humidity
+              multiple: false
+
+    # ═══════════════════════════════════════════════════════════════════
+    # SECTION 5 : NOTIFICATIONS
+    # ═══════════════════════════════════════════════════════════════════
+    section_notifications:
+      name: "📱 5. Notifications"
+      description: "Configuration des notifications mobiles"
+      icon: "mdi:cellphone-message"
+      collapsed: true
+      input:
+        notify_service:
+          name: "Service de notification"
+          description: |
+            Service à utiliser pour envoyer les notifications.
+            Format : `notify.mobile_app_xxx`
+            
+            _Trouvez le nom exact dans : Outils de développement → Services → notify._
+          default: "notify.mobile_app_sm_s928b"
+          selector:
+            text:
+              multiline: false
+
+        notification_channel:
+          name: "Canal Android"
+          description: |
+            Canal de notification pour Android.
+            Permet de personnaliser le son/vibration par canal.
+          default: "lavelinge_notification"
+          selector:
+            text:
+              multiline: false
+
+        title_start:
+          name: "Titre notification démarrage"
+          description: "Titre affiché au début du cycle"
+          default: "🚀 Lave-linge démarré"
+          selector:
+            text:
+              multiline: false
+
+        title_end:
+          name: "Titre notification fin"
+          description: "Titre affiché à la fin du cycle (le verdict sera ajouté)"
+          default: "🧺 Cycle terminé"
+          selector:
+            text:
+              multiline: false
+
+    # ═══════════════════════════════════════════════════════════════════
+    # SECTION 6 : SEUILS DE CALCUL DU SCORE
+    # ═══════════════════════════════════════════════════════════════════
+    section_seuils:
+      name: "⚙️ 6. Seuils de calcul (avancé)"
+      description: "Paramètres pour affiner le score de séchage"
+      icon: "mdi:tune"
+      collapsed: true
+      input:
+        min_temp_good:
+          name: "Température ext. minimale favorable"
+          description: "En dessous, malus appliqué"
+          default: 12
+          selector:
+            number:
+              min: 5
+              max: 25
+              step: 1
+              unit_of_measurement: "°C"
+              mode: slider
+
+        max_humidity_ok:
+          name: "Humidité ext. maximale acceptable"
+          description: "Au-dessus, séchage ralenti"
+          default: 70
+          selector:
+            number:
+              min: 40
+              max: 90
+              step: 5
+              unit_of_measurement: "%"
+              mode: slider
+
+        min_wind_bonus:
+          name: "Vent minimum pour bonus"
+          description: "Vitesse de vent favorisant le séchage"
+          default: 5
+          selector:
+            number:
+              min: 0
+              max: 20
+              step: 1
+              unit_of_measurement: "km/h"
+              mode: slider
+
+        max_cloud_ok:
+          name: "Couverture nuageuse max"
+          description: "Au-dessus, moins de soleil = séchage plus lent"
+          default: 60
+          selector:
+            number:
+              min: 20
+              max: 100
+              step: 10
+              unit_of_measurement: "%"
+              mode: slider
+
+        min_uv_bonus:
+          name: "UV minimum pour bonus"
+          description: "Indice UV favorisant le séchage"
+          default: 2
+          selector:
+            number:
+              min: 0
+              max: 8
+              step: 1
+              mode: slider
+
+        max_rain_chance:
+          name: "Risque pluie max avant intérieur forcé"
+          description: "Au-dessus, verdict = intérieur obligatoire"
+          default: 50
+          selector:
+            number:
+              min: 20
+              max: 80
+              step: 5
+              unit_of_measurement: "%"
+              mode: slider
+
+# ═══════════════════════════════════════════════════════════════════════════
+# VARIABLES GLOBALES
+# ═══════════════════════════════════════════════════════════════════════════
+variables:
+  power_sensor: !input power_sensor
+  cycle_flag: !input cycle_flag
+  cycle_start_time: !input cycle_start_time
+  temp_ext_sensor: !input temp_ext_sensor
+  humidity_ext_sensor: !input humidity_ext_sensor
+  wind_sensor: !input wind_sensor
+  cloud_sensor: !input cloud_sensor
+  uv_sensor: !input uv_sensor
+  rain_chance_sensor: !input rain_chance_sensor
+  temp_int_sensor: !input temp_int_sensor
+  humidity_int_sensor: !input humidity_int_sensor
+  notify_service: !input notify_service
+  notification_channel: !input notification_channel
+  title_start: !input title_start
+  title_end: !input title_end
+  start_threshold: !input start_threshold
+  stop_threshold: !input stop_threshold
+  min_cycle_duration: !input min_cycle_duration
+  min_temp_good: !input min_temp_good
+  max_humidity_ok: !input max_humidity_ok
+  min_wind_bonus: !input min_wind_bonus
+  max_cloud_ok: !input max_cloud_ok
+  min_uv_bonus: !input min_uv_bonus
+  max_rain_chance: !input max_rain_chance
+
+# ═══════════════════════════════════════════════════════════════════════════
+# TRIGGERS
+# ═══════════════════════════════════════════════════════════════════════════
+trigger:
+  - id: "cycle_start"
+    platform: numeric_state
+    entity_id: !input power_sensor
+    above: !input start_threshold
+    for: !input start_duration
+
+  - id: "cycle_end"
+    platform: numeric_state
+    entity_id: !input power_sensor
+    below: !input stop_threshold
+    for: !input stop_duration
+
+# ═══════════════════════════════════════════════════════════════════════════
+# CONDITIONS (aucune globale - gérées dans choose)
+# ═══════════════════════════════════════════════════════════════════════════
+condition: []
+
+# ═══════════════════════════════════════════════════════════════════════════
+# ACTIONS
+# ═══════════════════════════════════════════════════════════════════════════
+action:
+  - choose:
+      # ─────────────────────────────────────────────────────────────────────
+      # DÉMARRAGE DU CYCLE
+      # ─────────────────────────────────────────────────────────────────────
+      - alias: "Démarrage du cycle"
+        conditions:
+          - condition: trigger
+            id: "cycle_start"
+          - condition: state
+            entity_id: !input cycle_flag
+            state: "off"
+        sequence:
+          - service: input_boolean.turn_on
+            target:
+              entity_id: !input cycle_flag
+
+          - service: input_datetime.set_datetime
+            target:
+              entity_id: !input cycle_start_time
+            data:
+              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+
+          - service: "{{ notify_service }}"
+            data:
+              title: "{{ title_start }}"
+              message: "Cycle lancé à {{ now().strftime('%H:%M') }}. Tu recevras le verdict de séchage à la fin !"
+              data:
+                channel: "{{ notification_channel }}"
+                importance: low
+                ttl: 0
+                priority: high
+                tag: "lavelinge_cycle"
+
+      # ─────────────────────────────────────────────────────────────────────
+      # FIN DU CYCLE
+      # ─────────────────────────────────────────────────────────────────────
+      - alias: "Fin du cycle"
+        conditions:
+          - condition: trigger
+            id: "cycle_end"
+          - condition: state
+            entity_id: !input cycle_flag
+            state: "on"
+          - condition: template
+            value_template: >-
+              {{ (as_timestamp(now()) - as_timestamp(states(cycle_start_time))) > (min_cycle_duration | int * 60) }}
+        sequence:
+          # Éteindre le flag
+          - service: input_boolean.turn_off
+            target:
+              entity_id: !input cycle_flag
+
+          # Récupérer les valeurs des capteurs
+          - variables:
+              cycle_duration: >-
+                {{ ((as_timestamp(now()) - as_timestamp(states(cycle_start_time))) / 60) | round(0) }}
+              t_ext: "{{ states(temp_ext_sensor) | float(0) }}"
+              h_ext: "{{ states(humidity_ext_sensor) | float(100) }}"
+              v_wind: "{{ states(wind_sensor) | float(0) }}"
+              c_cloud: "{{ states(cloud_sensor) | float(100) }}"
+              i_uv: "{{ states(uv_sensor) | float(0) }}"
+              r_rain: "{{ states(rain_chance_sensor) | float(100) }}"
+              t_int: "{{ states(temp_int_sensor) | float(20) }}"
+              h_int: "{{ states(humidity_int_sensor) | float(50) }}"
+
+          # Calculer les scores extérieurs
+          - variables:
+              score_temp_ext: >-
+                {% if t_ext >= 20 %}2
+                {% elif t_ext >= 15 %}1.5
+                {% elif t_ext >= min_temp_good %}1
+                {% elif t_ext >= 8 %}0.5
+                {% else %}0{% endif %}
+              score_humidity_ext: >-
+                {% if h_ext <= 50 %}2
+                {% elif h_ext <= 60 %}1.5
+                {% elif h_ext <= max_humidity_ok %}1
+                {% elif h_ext <= 80 %}0.5
+                {% else %}0{% endif %}
+              score_wind: >-
+                {% if v_wind >= 15 %}2
+                {% elif v_wind >= 10 %}1.5
+                {% elif v_wind >= min_wind_bonus %}1
+                {% elif v_wind >= 2 %}0.5
+                {% else %}0{% endif %}
+              score_clouds: >-
+                {% if c_cloud <= 30 %}2
+                {% elif c_cloud <= 50 %}1.5
+                {% elif c_cloud <= max_cloud_ok %}1
+                {% elif c_cloud <= 85 %}0.5
+                {% else %}0{% endif %}
+              score_uv: >-
+                {% if i_uv >= 5 %}2
+                {% elif i_uv >= 3 %}1.5
+                {% elif i_uv >= min_uv_bonus %}1
+                {% elif i_uv >= 1 %}0.5
+                {% else %}0{% endif %}
+              score_rain: >-
+                {% if r_rain <= 10 %}2
+                {% elif r_rain <= 25 %}1.5
+                {% elif r_rain <= 40 %}1
+                {% elif r_rain <= 60 %}0.5
+                {% else %}0{% endif %}
+              score_humidity_int: >-
+                {% if h_int <= 50 %}2
+                {% elif h_int <= 60 %}1.5
+                {% elif h_int <= 70 %}1
+                {% elif h_int <= 80 %}0.5
+                {% else %}0{% endif %}
+              score_temp_int: >-
+                {% if t_int >= 22 %}2
+                {% elif t_int >= 20 %}1.5
+                {% elif t_int >= 18 %}1
+                {% elif t_int >= 15 %}0.5
+                {% else %}0{% endif %}
+
+          # Calculer les totaux
+          - variables:
+              total_ext: >-
+                {{ (score_temp_ext | float + score_humidity_ext | float + score_wind | float + score_clouds | float + score_uv | float + score_rain | float) }}
+              total_int: >-
+                {{ (score_humidity_int | float + score_temp_int | float) * 3 }}
+              pct_ext: "{{ ((total_ext / 12) * 100) | round(0) }}"
+              pct_int: "{{ ((total_int / 12) * 100) | round(0) }}"
+
+          # Déterminer le verdict
+          - variables:
+              verdict: >-
+                {% if r_rain > max_rain_chance %}🏠 INTÉRIEUR (risque pluie {{ r_rain | round(0) }}%)
+                {% elif pct_ext | int >= 70 and pct_ext | int > pct_int | int %}☀️ EXTÉRIEUR recommandé
+                {% elif pct_int | int >= 60 and pct_int | int >= pct_ext | int %}🏠 INTÉRIEUR recommandé
+                {% elif pct_ext | int >= 50 %}⚖️ EXTÉRIEUR possible
+                {% else %}🏠 INTÉRIEUR conseillé{% endif %}
+              verdict_emoji: >-
+                {% if r_rain > max_rain_chance %}🏠
+                {% elif pct_ext | int >= 70 and pct_ext | int > pct_int | int %}☀️
+                {% elif pct_int | int >= 60 %}🏠
+                {% elif pct_ext | int >= 50 %}⚖️
+                {% else %}🏠{% endif %}
+              verdict_color: >-
+                {% if r_rain > max_rain_chance %}#FF6B6B
+                {% elif pct_ext | int >= 70 and pct_ext | int > pct_int | int %}#4CAF50
+                {% elif pct_int | int >= 60 %}#2196F3
+                {% elif pct_ext | int >= 50 %}#FF9800
+                {% else %}#9E9E9E{% endif %}
+
+          # Envoyer la notification de fin
+          - service: "{{ notify_service }}"
+            data:
+              title: "{{ title_end }} — {{ verdict_emoji }}"
+              message: |
+                Durée: {{ cycle_duration }} min
+                {{ verdict }}
+
+                📊 Ext: {{ pct_ext }}% | Int: {{ pct_int }}%
+              data:
+                channel: "{{ notification_channel }}"
+                importance: high
+                ttl: 0
+                priority: high
+                persistent: true
+                tag: "lavelinge_fin"
+                color: "{{ verdict_color }}"
+                actions:
+                  - action: "DETAILS_SECHAGE"
+                    title: "📋 Voir détails"
+                  - action: "LINGE_ETENDU"
+                    title: "✅ Linge étendu"
+                clickAction: "entityId:{{ cycle_flag }}"
+
+mode: single
+max_exceeded: silent
