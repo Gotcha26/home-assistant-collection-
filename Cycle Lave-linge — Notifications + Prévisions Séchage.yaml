@@ -1,0 +1,175 @@
+alias: Cycle Lave-linge — Notifications + Prévisions Séchage
+description: >-
+  Détection fiable du cycle lave-linge avec verdict de séchage intelligent
+  comparant conditions extérieures et intérieures. Seuils calibrés sur données
+  réelles.
+triggers:
+  - id: cycle_start
+    entity_id: sensor.0x94a081fffe5e84fd_power
+    above: 8
+    for:
+      seconds: 25
+    trigger: numeric_state
+  - id: cycle_end
+    entity_id: sensor.0x94a081fffe5e84fd_power
+    below: 5
+    for:
+      minutes: 2
+    trigger: numeric_state
+conditions: []
+actions:
+  - choose:
+      - alias: Démarrage du cycle
+        conditions:
+          - condition: trigger
+            id: cycle_start
+          - condition: state
+            entity_id: input_boolean.cycle_ll_en_cours
+            state: "off"
+        sequence:
+          - target:
+              entity_id: input_boolean.cycle_ll_en_cours
+            action: input_boolean.turn_on
+          - target:
+              entity_id: input_datetime.debut_cycle_lave_linge
+            data:
+              datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+            action: input_datetime.set_datetime
+          - data:
+              title: 🚀 Lave-linge démarré
+              message: >-
+                Cycle lancé à {{ now().strftime('%H:%M') }}. Je t'enverrai les
+                prévisions de séchage à la fin !
+              data:
+                channel: silent_channel
+                importance: low
+                ttl: 0
+                priority: high
+                tag: lavelinge_cycle
+            action: "{{ notify_service }}"
+      - alias: Fin du cycle
+        conditions:
+          - condition: trigger
+            id: cycle_end
+          - condition: state
+            entity_id: input_boolean.cycle_ll_en_cours
+            state: "on"
+          - condition: template
+            value_template: >-
+              {{ (as_timestamp(now()) -
+              as_timestamp(states('input_datetime.debut_cycle_lave_linge'))) >
+              3600 }}
+        sequence:
+          - target:
+              entity_id: input_boolean.cycle_ll_en_cours
+            action: input_boolean.turn_off
+          - variables:
+              cycle_duration: >-
+                {{ ((as_timestamp(now()) -
+                as_timestamp(states('input_datetime.debut_cycle_lave_linge'))) /
+                60) | round(0) }}
+              t_ext: "{{ states('sensor.pierrelatte_temperature') | float(0) }}"
+              h_ext: "{{ states('sensor.pierrelatte_humidity') | float(100) }}"
+              v_wind: "{{ states('sensor.pierrelatte_wind_speed') | float(0) }}"
+              c_cloud: "{{ states('sensor.pierrelatte_cloud_cover') | float(100) }}"
+              i_uv: "{{ states('sensor.pierrelatte_uv') | float(0) }}"
+              r_rain: "{{ states('sensor.pierrelatte_rain_chance') | float(100) }}"
+              t_int: >-
+                {{ states('sensor.0x08ddebfffe105c66_temperature') | float(20)
+                }}
+              h_int: "{{ states('sensor.0x08ddebfffe105c66_humidity') | float(50) }}"
+          - variables:
+              score_temp_ext: >-
+                {% if t_ext >= 20 %}2{% elif t_ext >= 15 %}1.5{% elif t_ext >=
+                12 %}1{% elif t_ext >= 8 %}0.5{% else %}0{% endif %}
+              score_humidity_ext: >-
+                {% if h_ext <= 50 %}2{% elif h_ext <= 60 %}1.5{% elif h_ext <=
+                70 %}1{% elif h_ext <= 80 %}0.5{% else %}0{% endif %}
+              score_wind: >-
+                {% if v_wind >= 15 %}2{% elif v_wind >= 10 %}1.5{% elif v_wind
+                >= 5 %}1{% elif v_wind >= 2 %}0.5{% else %}0{% endif %}
+              score_clouds: >-
+                {% if c_cloud <= 30 %}2{% elif c_cloud <= 50 %}1.5{% elif
+                c_cloud <= 70 %}1{% elif c_cloud <= 85 %}0.5{% else %}0{% endif
+                %}
+              score_uv: >-
+                {% if i_uv >= 5 %}2{% elif i_uv >= 3 %}1.5{% elif i_uv >= 2
+                %}1{% elif i_uv >= 1 %}0.5{% else %}0{% endif %}
+              score_rain: >-
+                {% if r_rain <= 10 %}2{% elif r_rain <= 25 %}1.5{% elif r_rain
+                <= 40 %}1{% elif r_rain <= 60 %}0.5{% else %}0{% endif %}
+              score_humidity_int: >-
+                {% if h_int <= 50 %}2{% elif h_int <= 60 %}1.5{% elif h_int <=
+                70 %}1{% elif h_int <= 80 %}0.5{% else %}0{% endif %}
+              score_temp_int: >-
+                {% if t_int >= 22 %}2{% elif t_int >= 20 %}1.5{% elif t_int >=
+                18 %}1{% elif t_int >= 15 %}0.5{% else %}0{% endif %}
+          - variables:
+              total_ext: >-
+                {{ (score_temp_ext | float + score_humidity_ext | float +
+                score_wind | float + score_clouds | float + score_uv | float +
+                score_rain | float) }}
+              total_int: "{{ (score_humidity_int | float + score_temp_int | float) * 3 }}"
+              pct_ext: "{{ ((total_ext / 12) * 100) | round(0) }}"
+              pct_int: "{{ ((total_int / 12) * 100) | round(0) }}"
+          - variables:
+              verdict: >-
+                {% if r_rain > 50 %}🏠 INTÉRIEUR (risque de pluie {{ r_rain
+                }}%){% elif pct_ext | int >= 70 and pct_ext | int > pct_int |
+                int %}☀️ EXTÉRIEUR recommandé{% elif pct_int | int >= 60 and
+                pct_int | int >= pct_ext | int %}🏠 INTÉRIEUR recommandé{% elif
+                pct_ext | int >= 50 %}⚖️ EXTÉRIEUR possible{% else %}🏠
+                INTÉRIEUR conseillé{% endif %}
+              verdict_emoji: >-
+                {% if r_rain > 50 %}🏠{% elif pct_ext | int >= 70 and pct_ext |
+                int > pct_int | int %}☀️{% elif pct_int | int >= 60 %}🏠{% elif
+                pct_ext | int >= 50 %}⚖️{% else %}🏠{% endif %}
+              verdict_color: >-
+                {% if r_rain > 50 %}#FF6B6B{% elif pct_ext | int >= 70 and
+                pct_ext | int > pct_int | int %}#4CAF50{% elif pct_int | int >=
+                60 %}#2196F3{% elif pct_ext | int >= 50 %}#FF9800{% else
+                %}#9E9E9E{% endif %}
+          - data:
+              title: 🧺 Cycle terminé — {{ verdict_emoji }}
+              message: |-
+                Durée: {{ cycle_duration }} min
+                {{ verdict }}
+
+                📊 Ext: {{ pct_ext }}% | Int: {{ pct_int }}%
+              data:
+                channel: lavelinge_notification
+                importance: high
+                ttl: 0
+                priority: high
+                persistent: true
+                tag: lavelinge_fin
+                color: "{{ verdict_color }}"
+                actions:
+                  - action: DETAILS_SECHAGE
+                    title: 📋 Voir détails
+                  - action: LINGE_ETENDU
+                    title: ✅ Linge étendu
+                clickAction: entityId:input_boolean.cycle_ll_en_cours
+            action: "{{ notify_service }}"
+mode: single
+variables:
+  power_sensor: sensor.0x94a081fffe5e84fd_power
+  cycle_flag: input_boolean.cycle_ll_en_cours
+  cycle_start_time: input_datetime.debut_cycle_lave_linge
+  temp_ext: sensor.pierrelatte_temperature
+  humidity_ext: sensor.pierrelatte_humidity
+  wind: sensor.pierrelatte_wind_speed
+  clouds: sensor.pierrelatte_cloud_cover
+  uv: sensor.pierrelatte_uv
+  rain_chance: sensor.pierrelatte_rain_chance
+  temp_int: sensor.0x08ddebfffe105c66_temperature
+  humidity_int: sensor.0x08ddebfffe105c66_humidity
+  notify_service: notify.mobile_app_sm_s928b
+  start_threshold: 8
+  stop_threshold: 5
+  min_temp_good: 12
+  max_humidity_ok: 70
+  min_wind: 5
+  max_cloud: 60
+  min_uv: 2
+  max_rain_ok: 20
